@@ -1,10 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
-
-import slide1Img from "../assets/carousel/slide1.jpg";
-import slide2Img from "../assets/carousel/slide2.jpg";
-import slide3Img from "../assets/carousel/slide3.jpg";
-import slide4Img from "../assets/carousel/slide4.jpg";
 
 const SLIDE_MS = 6000;
 
@@ -14,36 +9,34 @@ const variants = {
   exit: (dir) => ({ opacity: 0, x: dir > 0 ? -90 : 90, scale: 0.985 }),
 };
 
+const slides = [
+  {
+    badge: "Trusted providers",
+    title: "Hire verified pros in Lebanon.",
+    sub: "Electricians • Plumbers • AC • Carpentry • Cleaning",
+    img: "/carousel/slide1.jpg",
+  },
+  {
+    badge: "Secure chat",
+    title: "Chat inside the platform.",
+    sub: "No WhatsApp. No phone numbers. Keep everything protected.",
+    img: "/carousel/slide2.jpg",
+  },
+  {
+    badge: "Fast booking",
+    title: "Request a job in seconds.",
+    sub: "Pick a provider, describe the issue, start a job-based chat.",
+    img: "/carousel/slide3.jpg",
+  },
+  {
+    badge: "Top rated",
+    title: "Find the best, faster.",
+    sub: "Smart sorting by rating, jobs, and verification.",
+    img: "/carousel/slide4.jpg",
+  },
+];
+
 export default function HeroCarousel({ stats }) {
-  const slides = useMemo(
-    () => [
-      {
-        badge: "Trusted providers",
-        title: "Hire verified pros in Lebanon.",
-        sub: "Electricians • Plumbers • AC • Carpentry • Cleaning",
-        img: slide1Img,
-      },
-      {
-        badge: "Secure chat",
-        title: "Chat inside the platform.",
-        sub: "No WhatsApp. No phone numbers. Keep everything protected.",
-        img: slide2Img,
-      },
-      {
-        badge: "Fast booking",
-        title: "Request a job in seconds.",
-        sub: "Pick a provider, describe the issue, start a job-based chat.",
-        img: slide3Img,
-      },
-      {
-        badge: "Top rated",
-        title: "Find the best, faster.",
-        sub: "Smart sorting by rating, jobs, and verification.",
-        img: slide4Img,
-      },
-    ],
-    []
-  );
 
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
