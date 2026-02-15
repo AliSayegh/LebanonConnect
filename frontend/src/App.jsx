@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AuthProvider } from "./auth/AuthContent";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import Toast from "./components/Toast";
 
 import Home from "./pages/Home";
@@ -86,6 +87,7 @@ export default function App() {
           />
           <Route path="/provider/setup" element={<ProviderSetup notify={notify} />} />
         </Routes>
+        <Footer />
       </BrowserRouter>
     </AuthProvider>
   );
