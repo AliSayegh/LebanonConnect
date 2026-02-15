@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 
+import slide1Img from "../assets/carousel/slide1.jpg";
+import slide2Img from "../assets/carousel/slide2.jpg";
+import slide3Img from "../assets/carousel/slide3.jpg";
+import slide4Img from "../assets/carousel/slide4.jpg";
+
 const SLIDE_MS = 6000;
 
 const variants = {
@@ -16,25 +21,25 @@ export default function HeroCarousel({ stats }) {
         badge: "Trusted providers",
         title: "Hire verified pros in Lebanon.",
         sub: "Electricians • Plumbers • AC • Carpentry • Cleaning",
-        img: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
+        img: slide1Img,
       },
       {
         badge: "Secure chat",
         title: "Chat inside the platform.",
         sub: "No WhatsApp. No phone numbers. Keep everything protected.",
-        img: "https://images.unsplash.com/photo-1521791055366-0d553872125f?auto=format&fit=crop&w=1600&q=80",
+        img: slide2Img,
       },
       {
         badge: "Fast booking",
         title: "Request a job in seconds.",
         sub: "Pick a provider, describe the issue, start a job-based chat.",
-        img: "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+        img: slide3Img,
       },
       {
         badge: "Top rated",
         title: "Find the best, faster.",
         sub: "Smart sorting by rating, jobs, and verification.",
-        img: "https://images.unsplash.com/photo-1523413651479-597eb2da0ad6?auto=format&fit=crop&w=1600&q=80",
+        img: slide4Img,
       },
     ],
     []
