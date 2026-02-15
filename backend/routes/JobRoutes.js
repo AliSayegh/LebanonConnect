@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const mongoose = require("mongoose");
 const Job = require("../Models/Job");
+const ProviderProfile = require("../Models/ProviderProfile");
 const { requireAuth, requireRole } = require("../Middleware/auth");
 const checkProviderCanAccept = require("../Middleware/checkProviderCanAccept");
 // ✅ GET /api/jobs/mine (dashboard)
@@ -41,6 +42,21 @@ router.get("/mine", requireAuth, async (req, res) => {
 router.post("/", requireAuth, requireRole("customer"), async (req, res) => {
   try {
     const { providerId, categoryId, title, description, city, addressArea } = req.body;
+    
+    // Validate IDs format
+    if (!mongoose.isValidObjectId(providerId)) return res.status(400).json({ message: "Invalid providerId" });
+    if (!mongoose.isValidObjectId(categoryId)) return res.status(400).json({ message: "Invalid categoryId" });
+
+    // Validate existence
+    const providerExists = await mongoose.model("UserAuth").findById(providerId);
+    if (!providerExists || providerExists.role !== "provider") {
+        return res.status(404).json({ message: "Provider not found" });
+    }
+
+    const categoryExists = await mongoose.model("Category").findById(categoryId);
+    if (!categoryExists) {
+        return res.status(404).json({ message: "Category not found" });
+    }
 
     if (!providerId || !categoryId || !title || !city) {
       return res.status(400).json({
@@ -96,6 +112,7 @@ router.get("/:jobId", requireAuth, async (req, res) => {
 });
 router.patch("/:jobId/accept", requireAuth, requireRole("provider"), checkProviderCanAccept, async (req, res) => {
   const { jobId } = req.params;
+  if (!mongoose.isValidObjectId(jobId)) return res.status(400).json({ message: "Invalid jobId" });
 
   const job = await Job.findById(jobId);
   if (!job) return res.status(404).json({ message: "Job not found" });
@@ -106,12 +123,19 @@ router.patch("/:jobId/accept", requireAuth, requireRole("provider"), checkProvid
   job.acceptedAt = new Date();
   await job.save();
 
+  // ✅ Increment provider's completed jobs count immediately on acceptance
+  await ProviderProfile.findOneAndUpdate(
+    { userId: job.providerId },
+    { $inc: { completedJobsCount: 1 } }
+  );
+
   res.json({ message: "Job accepted ✅", job });
 });
 
 // Provider marks completed
 router.patch("/:jobId/complete", requireAuth, requireRole("provider"), async (req, res) => {
   const { jobId } = req.params;
+  if (!mongoose.isValidObjectId(jobId)) return res.status(400).json({ message: "Invalid jobId" });
 
   const job = await Job.findById(jobId);
   if (!job) return res.status(404).json({ message: "Job not found" });
@@ -128,6 +152,7 @@ router.patch("/:jobId/complete", requireAuth, requireRole("provider"), async (re
 // Customer confirms completion + commission computed
 router.patch("/:jobId/confirm", requireAuth, requireRole("customer"), async (req, res) => {
   const { jobId } = req.params;
+  if (!mongoose.isValidObjectId(jobId)) return res.status(400).json({ message: "Invalid jobId" });
   const { finalPrice } = req.body; // number
 
   const job = await Job.findById(jobId);
