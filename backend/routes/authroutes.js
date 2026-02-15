@@ -12,6 +12,7 @@ router.post("/register", async (req, res) => {
     const { email, password, role, fullName, displayName, city } = req.body;
 
     if (!email || !password) return res.status(400).json({ message: "Missing email/password" });
+    if (password.length < 8) return res.status(400).json({ message: "Password must be at least 8 chars" });
 
     const finalRole = ["customer", "provider"].includes(role) ? role : "customer";
 
