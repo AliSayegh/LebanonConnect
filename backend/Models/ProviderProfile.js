@@ -28,7 +28,7 @@ const providerProfileSchema = new mongoose.Schema(
       trialUsed: { type: Boolean, default: false }
     },
     onboardingComplete: { type: Boolean, default: false, index: true },
-    categoryIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category", index: true }],
+
 
 
   },

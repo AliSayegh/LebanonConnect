@@ -85,7 +85,14 @@ export default function App() {
               </RoleRoute>
             }
           />
-          <Route path="/provider/setup" element={<ProviderSetup notify={notify} />} />
+          <Route
+            path="/provider/setup"
+            element={
+              <ProtectedRoute>
+                <ProviderSetup notify={notify} />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
         <Footer />
       </BrowserRouter>

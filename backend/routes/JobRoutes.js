@@ -143,6 +143,10 @@ router.patch("/:jobId/confirm", requireAuth, requireRole("customer"), async (req
   job.finalPrice = price;
 
   const pct = job.commission?.percentage ?? 10;
+  /* 
+     Safe Math: Ensure we don't get floating point artifacts.
+     We round to the nearest integer (cents/units) to stay safe.
+  */
   job.commission.amount = Math.round(price * (pct / 100));
 
   await job.save();

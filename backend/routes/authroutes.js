@@ -12,6 +12,15 @@ router.post("/register", async (req, res) => {
     const { email, password, role, fullName, displayName, city } = req.body;
 
     if (!email || !password) return res.status(400).json({ message: "Missing email/password" });
+    
+    // Manual Validation (Safety First)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
 
     const finalRole = ["customer", "provider"].includes(role) ? role : "customer";
 
