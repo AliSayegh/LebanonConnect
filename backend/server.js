@@ -22,6 +22,15 @@ app.use("/api/subscriptions", require("./routes/subscriptionRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
 
+// ✅ Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("🔥 Global Error:", err.stack);
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+    // Only show stack in development if needed, but for now we keep it simple
+  });
+});
+
 
 
 const server = http.createServer(app);
