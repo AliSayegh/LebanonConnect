@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 
 const SLIDE_MS = 6000;
@@ -9,36 +9,34 @@ const variants = {
   exit: (dir) => ({ opacity: 0, x: dir > 0 ? -90 : 90, scale: 0.985 }),
 };
 
+const slides = [
+  {
+    badge: "Trusted providers",
+    title: "Hire verified pros in Lebanon.",
+    sub: "Electricians • Plumbers • AC • Carpentry • Cleaning",
+    img: "/carousel/slide1.jpg",
+  },
+  {
+    badge: "Secure chat",
+    title: "Chat inside the platform.",
+    sub: "No WhatsApp. No phone numbers. Keep everything protected.",
+    img: "/carousel/slide2.jpg",
+  },
+  {
+    badge: "Fast booking",
+    title: "Request a job in seconds.",
+    sub: "Pick a provider, describe the issue, start a job-based chat.",
+    img: "/carousel/slide3.jpg",
+  },
+  {
+    badge: "Top rated",
+    title: "Find the best, faster.",
+    sub: "Smart sorting by rating, jobs, and verification.",
+    img: "/carousel/slide4.jpg",
+  },
+];
+
 export default function HeroCarousel({ stats }) {
-  const slides = useMemo(
-    () => [
-      {
-        badge: "Trusted providers",
-        title: "Hire verified pros in Lebanon.",
-        sub: "Electricians • Plumbers • AC • Carpentry • Cleaning",
-        img: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=80",
-      },
-      {
-        badge: "Secure chat",
-        title: "Chat inside the platform.",
-        sub: "No WhatsApp. No phone numbers. Keep everything protected.",
-        img: "https://images.unsplash.com/photo-1521791055366-0d553872125f?auto=format&fit=crop&w=1600&q=80",
-      },
-      {
-        badge: "Fast booking",
-        title: "Request a job in seconds.",
-        sub: "Pick a provider, describe the issue, start a job-based chat.",
-        img: "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
-      },
-      {
-        badge: "Top rated",
-        title: "Find the best, faster.",
-        sub: "Smart sorting by rating, jobs, and verification.",
-        img: "https://images.unsplash.com/photo-1523413651479-597eb2da0ad6?auto=format&fit=crop&w=1600&q=80",
-      },
-    ],
-    []
-  );
 
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
