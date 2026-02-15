@@ -5,8 +5,13 @@ import { AuthCtx } from "./authCtx";
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [user, setUser] = useState(() => {
-    const raw = localStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
+    try {
+      const raw = localStorage.getItem("user");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      localStorage.removeItem("user");
+      return null;
+    }
   });
 
   const client = useMemo(() => api(token), [token]);
