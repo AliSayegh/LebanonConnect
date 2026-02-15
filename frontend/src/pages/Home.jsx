@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
@@ -8,9 +8,14 @@ import HeroCarousel from "../components/HeroCarousel";
 
 const cities = ["Beirut", "Mount Lebanon", "Tripoli", "Saida", "Tyre", "Zahle"];
 
+// ✅ set this true if you REALLY want automatic scroll after some seconds
+const AUTO_SCROLL_AFTER_MS = 0; // e.g. 12000 for 12s, 0 = disabled
+
 export default function Home({ notify }) {
   const { token } = useAuth();
   const client = useMemo(() => api(token), [token]);
+
+  const bodyRef = useRef(null);
 
   const [stats, setStats] = useState({
     totalProviders: null,
@@ -26,7 +31,18 @@ export default function Home({ notify }) {
   const [data, setData] = useState({ items: [], total: 0, pages: 1 });
   const [loading, setLoading] = useState(false);
 
-  // ✅ Reset page when filters change (so you don't land on empty page 3 etc.)
+  const scrollToProviders = useCallback(() => {
+    bodyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  // optional auto-scroll
+  useEffect(() => {
+    if (!AUTO_SCROLL_AFTER_MS) return;
+    const t = setTimeout(scrollToProviders, AUTO_SCROLL_AFTER_MS);
+    return () => clearTimeout(t);
+  }, [scrollToProviders]);
+
+  // ✅ Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [city, verified, sort]);
@@ -47,7 +63,7 @@ export default function Home({ notify }) {
         cities: 6,
       });
     } catch {
-      // ignore (don’t break UI)
+      // ignore
     }
   }, [client, city]);
 
@@ -65,7 +81,6 @@ export default function Home({ notify }) {
         limit: "12",
       });
 
-      // ✅ ONLY send verified filter if enabled
       if (verified) qs.set("verified", "true");
 
       const res = await client.get(`/api/providers/search?${qs.toString()}`);
@@ -87,67 +102,91 @@ export default function Home({ notify }) {
 
   return (
     <div className="home">
-      <section className="homeHero">
-        <div className="homeHeroBg" />
+      {/* ✅ NEW PREMIUM HERO */}
+      <section className="heroMega">
+        {/* Background carousel (full screen) */}
+        <HeroCarousel stats={stats} className="heroMegaCarousel" />
+
+        {/* Overlay */}
+        <div className="heroMegaOverlay" />
+
+        {/* Foreground content */}
         <motion.div
-          className="homeHeroInner"
+          className="heroMegaInner"
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
+          transition={{ duration: 0.5 }}
         >
-          <div className="kicker">Lebanon-first marketplace</div>
-          <h1 className="heroTitle">
+          <div className="heroMegaTop">
+            <div className="heroMegaKicker">Lebanon-first marketplace</div>
+            <div className="heroMegaChips">
+              <span className="miniBadge">Verified providers</span>
+              <span className="miniBadge">In-app secure chat</span>
+              <span className="miniBadge">Fast booking</span>
+            </div>
+          </div>
+
+          <h1 className="heroMegaTitle">
             Find trusted providers.
-            <span className="heroAccent"> Chat inside the app.</span>
+            <span> Hire with confidence.</span>
           </h1>
-          <p className="heroSub">
-            Electricians, plumbers, AC, carpentry and more — with secure
-            job-based messaging (no WhatsApp).
+
+          <p className="heroMegaSub">
+            Electricians, plumbers, AC, carpentry and more — with secure job-based
+            messaging (no WhatsApp).
           </p>
 
-          <HeroCarousel stats={stats} />
+          {/* Controls */}
+          <div className="heroMegaControls">
+            <div className="heroMegaFilters">
+              <div className="field">
+                <div className="fieldLabel">City</div>
+                <select
+                  className="input"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                >
+                  {cities.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="filters">
-            <div className="field">
-              <div className="fieldLabel">City</div>
-              <select
-                className="input"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+              <div className="field">
+                <div className="fieldLabel">Sort</div>
+                <select
+                  className="input"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                >
+                  <option value="rating">Top rated</option>
+                  <option value="jobs">Most jobs</option>
+                  <option value="recent">Newest</option>
+                </select>
+              </div>
+
+              <button
+                className={verified ? "btn primary" : "btn ghost"}
+                onClick={() => setVerified((v) => !v)}
+                title="Show verified only"
               >
-                {cities.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                {verified ? "Verified ✓" : "Verified only"}
+              </button>
             </div>
 
-            <div className="field">
-              <div className="fieldLabel">Sort</div>
-              <select
-                className="input"
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-              >
-                <option value="rating">Top rated</option>
-                <option value="jobs">Most jobs</option>
-                <option value="recent">Newest</option>
-              </select>
+            <div className="heroMegaActions">
+              <button className="btn primary" onClick={scrollToProviders}>
+                Explore providers
+              </button>
             </div>
-
-            <button
-              className={verified ? "btn primary" : "btn ghost"}
-              onClick={() => setVerified((v) => !v)}
-              title="Show verified only"
-            >
-              {verified ? "Verified ✓" : "Verified only"}
-            </button>
           </div>
         </motion.div>
       </section>
 
-      <section className="homeBody">
+      {/* PROVIDERS SECTION */}
+      <section className="homeBody" ref={bodyRef}>
         <div className="homeTopRow">
           <div className="muted">
             Showing <b>{data.items.length}</b> of <b>{data.total}</b>
@@ -210,9 +249,7 @@ export default function Home({ notify }) {
 
                 <div className="statsRow">
                   <div className="stat">
-                    <div className="statNum">
-                      {(p.ratingAvg || 0).toFixed(1)}
-                    </div>
+                    <div className="statNum">{(p.ratingAvg || 0).toFixed(1)}</div>
                     <div className="statLab">rating</div>
                   </div>
                   <div className="stat">
@@ -226,8 +263,7 @@ export default function Home({ notify }) {
                 </div>
 
                 <div className="bio">
-                  {p.bio ||
-                    "Professional provider. Fast response and reliable service."}
+                  {p.bio || "Professional provider. Fast response and reliable service."}
                 </div>
 
                 <div className="cardActions">

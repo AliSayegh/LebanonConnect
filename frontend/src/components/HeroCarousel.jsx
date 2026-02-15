@@ -1,12 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
 
-const SLIDE_MS = 6000;
+const SLIDE_MS = 6500;
 
 const variants = {
-  enter: (dir) => ({ opacity: 0, x: dir > 0 ? 90 : -90, scale: 0.985 }),
+  enter: (dir) => ({ opacity: 0, x: dir > 0 ? 110 : -110, scale: 0.985 }),
   center: { opacity: 1, x: 0, scale: 1 },
-  exit: (dir) => ({ opacity: 0, x: dir > 0 ? -90 : 90, scale: 0.985 }),
+  exit: (dir) => ({ opacity: 0, x: dir > 0 ? -110 : 110, scale: 0.985 }),
 };
 
 import slide1 from "../assets/carousel/slide1.jpg";
@@ -41,19 +46,20 @@ const slides = [
   },
 ];
 
-export default function HeroCarousel({ stats }) {
-
+export default function HeroCarousel({ stats, className = "" }) {
   const [index, setIndex] = useState(0);
   const [dir, setDir] = useState(1);
   const [progress, setProgress] = useState(0);
 
-  // Parallax motion values
-  const x = useMotionValue(0);
-  const bgX = useTransform(x, [-160, 160], [-18, 18]);  // subtle parallax
-  const fgX = useTransform(x, [-160, 160], [10, -10]);  // opposite direction
-
   const timerRef = useRef(null);
-  const progressRef = useRef(null);
+  const rafRef = useRef(null);
+
+  // Parallax / drag
+  const dragX = useMotionValue(0);
+  const bgX = useTransform(dragX, [-180, 180], [-22, 22]);
+  const fgX = useTransform(dragX, [-180, 180], [12, -12]);
+
+  const slide = slides[index];
 
   const go = (nextIndex) => {
     setDir(nextIndex > index ? 1 : -1);
@@ -64,72 +70,73 @@ export default function HeroCarousel({ stats }) {
   const next = () => go(index + 1);
   const prev = () => go(index - 1);
 
-  // Autoplay timer
+  // autoplay
   useEffect(() => {
     clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => next(), SLIDE_MS);
+    timerRef.current = setInterval(next, SLIDE_MS);
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  // Progress bar animation loop
+  // progress
   useEffect(() => {
-    cancelAnimationFrame(progressRef.current);
-
+    cancelAnimationFrame(rafRef.current);
     const start = performance.now();
+
     const tick = (t) => {
       const p = Math.min(1, (t - start) / SLIDE_MS);
       setProgress(p);
-      if (p < 1) progressRef.current = requestAnimationFrame(tick);
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
     };
 
-    progressRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(progressRef.current);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
   }, [index]);
 
-  const slide = slides[index];
+  const progressPct = useMemo(
+    () => `${Math.round(progress * 100)}%`,
+    [progress],
+  );
 
   return (
-    <div className="heroCarousel">
-      <div className="heroCarouselFrame">
-        <div className="heroProgressTrack">
-          <div className="heroProgressFill" style={{ width: `${progress * 100}%` }} />
-        </div>
-
+    <div className={`heroCarousel2 ${className}`}>
+      <div className="heroCarousel2Frame">   
         <AnimatePresence initial={false} custom={dir}>
           <motion.div
             key={index}
-            className="heroSlide"
+            className="hero2Slide"
             custom={dir}
             variants={variants}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.12}
-            onDrag={(e, info) => x.set(info.offset.x)}
+            onDrag={(e, info) => dragX.set(info.offset.x)}
             onDragEnd={(_, info) => {
-              x.set(0);
+              dragX.set(0);
               const swipe = info.offset.x;
-              if (swipe < -90) next();
-              else if (swipe > 90) prev();
+              if (swipe < -100) next();
+              else if (swipe > 100) prev();
             }}
           >
-            {/* Parallax background */}
             <motion.div
-              className="heroSlideMedia"
+              className="hero2Media"
               style={{ backgroundImage: `url(${slide.img})`, x: bgX }}
             />
-            <div className="heroSlideOverlay" />
 
-            {/* Glass Card */}
-            <motion.div className="heroGlass" style={{ x: fgX }}>
-              <div className="heroSlideBadge">{slide.badge}</div>
+            <div className="hero2Overlay" />
+            <div className="hero2Film" />
+            <div className="hero2Glow" />
+            <div className="hero2Noise" />
+
+            <motion.div className="hero2Card" style={{ x: fgX }}>
+              <div className="hero2Badge">{slide.badge}</div>
 
               <motion.h2
-                className="heroSlideTitle"
+                className="hero2Title"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.05 }}
@@ -138,7 +145,7 @@ export default function HeroCarousel({ stats }) {
               </motion.h2>
 
               <motion.p
-                className="heroSlideSub"
+                className="hero2Sub"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35, delay: 0.12 }}
@@ -146,22 +153,26 @@ export default function HeroCarousel({ stats }) {
                 {slide.sub}
               </motion.p>
 
-              <div className="heroStatsRow">
-                <div className="heroStat">
-                  <div className="heroStatNum">{stats?.totalProviders ?? "—"}</div>
-                  <div className="heroStatLab">providers</div>
+              <div className="hero2Stats">
+                <div className="hero2Stat">
+                  <div className="hero2StatNum">
+                    {stats?.totalProviders ?? "—"}
+                  </div>
+                  <div className="hero2StatLab">providers</div>
                 </div>
-                <div className="heroStat">
-                  <div className="heroStatNum">{stats?.verifiedProviders ?? "—"}</div>
-                  <div className="heroStatLab">verified</div>
+                <div className="hero2Stat">
+                  <div className="hero2StatNum">
+                    {stats?.verifiedProviders ?? "—"}
+                  </div>
+                  <div className="hero2StatLab">verified</div>
                 </div>
-                <div className="heroStat">
-                  <div className="heroStatNum">{stats?.cities ?? "—"}</div>
-                  <div className="heroStatLab">cities</div>
+                <div className="hero2Stat">
+                  <div className="hero2StatNum">{stats?.cities ?? "—"}</div>
+                  <div className="hero2StatLab">cities</div>
                 </div>
               </div>
 
-              <div className="heroSlideMeta">
+              <div className="hero2Meta">
                 <span className="pill">Lebanon-first</span>
                 <span className="pill">Real-time chat</span>
                 <span className="pill">No contacts</span>
@@ -170,19 +181,25 @@ export default function HeroCarousel({ stats }) {
           </motion.div>
         </AnimatePresence>
 
-        <button className="heroArrow left" onClick={prev} aria-label="Previous slide">‹</button>
-        <button className="heroArrow right" onClick={next} aria-label="Next slide">›</button>
+        <button className="hero2Arrow left" onClick={prev} aria-label="Previous slide">
+          ‹
+        </button>
+        <button className="hero2Arrow right" onClick={next} aria-label="Next slide">
+          ›
+        </button>
 
-        <div className="heroDots">
+        <div className="hero2Dots">
           {slides.map((_, i) => (
             <button
               key={i}
-              className={i === index ? "heroDot on" : "heroDot"}
+              className={i === index ? "hero2Dot on" : "hero2Dot"}
               onClick={() => go(i)}
               aria-label={`Go to slide ${i + 1}`}
             />
           ))}
         </div>
+
+        <div className="hero2BottomFade" />
       </div>
     </div>
   );
