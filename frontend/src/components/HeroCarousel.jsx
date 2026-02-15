@@ -9,30 +9,35 @@ const variants = {
   exit: (dir) => ({ opacity: 0, x: dir > 0 ? -90 : 90, scale: 0.985 }),
 };
 
+import slide1 from "../assets/carousel/slide1.jpg";
+import slide2 from "../assets/carousel/slide2.jpg";
+import slide3 from "../assets/carousel/slide3.jpg";
+import slide4 from "../assets/carousel/slide4.jpg";
+
 const slides = [
   {
     badge: "Trusted providers",
     title: "Hire verified pros in Lebanon.",
     sub: "Electricians • Plumbers • AC • Carpentry • Cleaning",
-    img: "/carousel/slide1.jpg",
+    img: slide1,
   },
   {
     badge: "Secure chat",
     title: "Chat inside the platform.",
     sub: "No WhatsApp. No phone numbers. Keep everything protected.",
-    img: "/carousel/slide2.jpg",
+    img: slide2,
   },
   {
     badge: "Fast booking",
     title: "Request a job in seconds.",
     sub: "Pick a provider, describe the issue, start a job-based chat.",
-    img: "/carousel/slide3.jpg",
+    img: slide3,
   },
   {
     badge: "Top rated",
     title: "Find the best, faster.",
     sub: "Smart sorting by rating, jobs, and verification.",
-    img: "/carousel/slide4.jpg",
+    img: slide4,
   },
 ];
 
