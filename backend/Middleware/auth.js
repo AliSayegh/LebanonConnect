@@ -1,11 +1,20 @@
 const jwt = require("jsonwebtoken");
 
-function requireAuth(req, res, next) {
+const UserAuth = require("../Models/UserAuth");
+
+async function requireAuth(req, res, next) {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ message: "No token" });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user still exists/active
+    const user = await UserAuth.findById(decoded.id);
+    if (!user || user.status !== "active") {
+        return res.status(401).json({ message: "User not found or inactive" });
+    }
+
     req.user = decoded; // { id, role }
     next();
   } catch (err) {
