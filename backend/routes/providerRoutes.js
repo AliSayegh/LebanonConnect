@@ -20,6 +20,7 @@ router.get("/search", async (req, res) => {
     const {
       city,
       categoryId,
+      serviceSlug,
       verified,
       active,
       sort = "rating",
@@ -29,13 +30,34 @@ router.get("/search", async (req, res) => {
 
     const q = {};
 
+    // ✅ Handle serviceSlug if provided
+    if (serviceSlug) {
+      const cat = await Category.findOne({ slug: serviceSlug, isActive: true });
+      if (cat) {
+        q.categoryIds = { $in: [cat._id] };
+      } else {
+        // If slug requested but not found, return empty results early
+        return res.json({
+          page: Math.max(parseInt(page, 10) || 1, 1),
+          limit: Math.min(Math.max(parseInt(limit, 10) || 12, 1), 50),
+          total: 0,
+          pages: 0,
+          items: [],
+        });
+      }
+    }
+
     // ✅ default active=true
     if (active !== undefined) q.isActive = active === "true";
     else q.isActive = true;
 
-    // ✅ IMPORTANT: show only completed providers (and not empty categories)
+    // ✅ IMPORTANT: show only completed providers
     q.onboardingComplete = true;
-    q.categoryIds = { $exists: true, $not: { $size: 0 } };
+
+    // Only set default category query if not already filtering by slug/id
+    if (!q.categoryIds) {
+      q.categoryIds = { $exists: true, $not: { $size: 0 } };
+    }
 
     if (city) q.city = city.trim();
 

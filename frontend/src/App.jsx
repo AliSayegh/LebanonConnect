@@ -17,6 +17,7 @@ import Subscribe from "./pages/Subscribe";
 import Admin from "./pages/Admin";
 import RoleRoute from "./auth/RoleRoute";
 import ProviderSetup from "./pages/ProviderSetup";
+import ServicePage from "./pages/ServicePage";
 
 export default function App() {
   const [toast, setToast] = useState({ show: false });
@@ -85,6 +86,7 @@ export default function App() {
               </RoleRoute>
             }
           />
+          <Route path="/services/:serviceType" element={<ServicePage notify={notify} />} />
           <Route path="/provider/setup" element={<ProviderSetup notify={notify} />} />
         </Routes>
         <Footer />
