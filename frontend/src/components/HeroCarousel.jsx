@@ -180,14 +180,6 @@ export default function HeroCarousel({ stats, className = "" }) {
             </motion.div>
           </motion.div>
         </AnimatePresence>
-
-        <button className="hero2Arrow left" onClick={prev} aria-label="Previous slide">
-          ‹
-        </button>
-        <button className="hero2Arrow right" onClick={next} aria-label="Next slide">
-          ›
-        </button>
-
         <div className="hero2Dots">
           {slides.map((_, i) => (
             <button
