@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
@@ -7,6 +8,7 @@ import ServicesSection from "../components/ServicesSection";
 
 export default function Home() {
   const { token } = useAuth();
+  const nav = useNavigate();
   const client = useMemo(() => api(token), [token]);
 
   const [stats, setStats] = useState({
@@ -40,51 +42,18 @@ export default function Home() {
   }, [loadStats]);
 
   const scrollToServices = () => {
-    const el = document.getElementById("services-anchor");
-    el?.scrollIntoView({ behavior: "smooth" });
+    nav("/services");
   };
 
   return (
     <div className="home">
-      {/* ✅ HERO SECTION */}
+      {/* ✅ HERO CAROUSEL */}
       <section className="heroMega">
         <HeroCarousel stats={stats} className="heroMegaCarousel" />
-        <div className="heroMegaOverlay" />
-        <motion.div
-          className="heroMegaInner"
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="heroMegaTop">
-            <div className="heroMegaKicker">Lebanon-first marketplace</div>
-            <div className="heroMegaChips">
-              <span className="miniBadge">Verified providers</span>
-              <span className="miniBadge">In-app secure chat</span>
-              <span className="miniBadge">Fast booking</span>
-            </div>
-          </div>
-
-          <h1 className="heroMegaTitle">
-            Find trusted providers.
-            <span> Hire with confidence.</span>
-          </h1>
-
-          <p className="heroMegaSub">
-            Electricians, plumbers, AC, carpentry and more — with secure job-based
-            messaging (no WhatsApp).
-          </p>
-
-          <div className="heroMegaActions">
-            <button className="btn primary" onClick={scrollToServices}>
-              Explore services
-            </button>
-          </div>
-        </motion.div>
       </section>
 
-      {/* ✅ NEW SERVICES SECTION */}
-      <div id="services-anchor">
+      {/* ✅ SERVICES SECTION */}
+      <div id="services-section">
         <ServicesSection />
       </div>
     </div>

@@ -2,22 +2,23 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 const services = [
-  { name: "Electrician", slug: "electrician", icon: "/services-icons/electrician.png" },
-  { name: "Plumber", slug: "plumber", icon: "/services-icons/plumber.png" },
-  { name: "Carpenter", slug: "carpenter", icon: "/services-icons/carpenter.png" },
-  { name: "Painter", slug: "painter", icon: "/services-icons/painter.png" },
-  { name: "HVAC Tech", slug: "air-conditioner", icon: "/services-icons/hvac.png" },
-  { name: "Cleaning", slug: "cleaning", icon: "/services-icons/cleaning.png" },
-  { name: "Appliance", slug: "appliance", icon: "/services-icons/appliance.png" },
-  { name: "IT Support", slug: "it-support", icon: "/services-icons/it-support.png" },
+  { name: "Electrician", slug: "electrician", icon: "/services-icons/electrician" },
+  { name: "Plumber", slug: "plumber", icon: "/services-icons/plumber" },
+  { name: "Carpenter", slug: "carpenter", icon: "/services-icons/carpenter" },
+  { name: "Painter", slug: "painter", icon: "/services-icons/painter" },
+  { name: "HVAC Tech", slug: "air-conditioner", icon: "/services-icons/hvac" },
+  { name: "Cleaning", slug: "cleaning", icon: "/services-icons/cleaning" },
+  { name: "Appliance", slug: "appliance", icon: "/services-icons/appliance" },
+  { name: "IT Support", slug: "it-support", icon: "/services-icons/it-support" },
 ];
 
 export default function ServicesSection() {
   return (
     <section className="services-section">
       <div className="section-header">
-        <h2 className="section-title">Common Services</h2>
-        <p className="section-subtitle">Find trusted experts for your everyday home needs</p>
+        <div className="miniBadge" style={{ marginBottom: '12px' }}>Explore Categories</div>
+        <h2 className="section-title">Common <span>Services</span></h2>
+        <p className="section-subtitle">Find trusted experts for your everyday home needs in Lebanon</p>
       </div>
       
       <div className="services-grid">

@@ -21,6 +21,21 @@ export default function Navbar() {
         <NavLink to="/" className={({ isActive }) => (isActive ? "link active" : "link")}>
           Explore
         </NavLink>
+        <button 
+          className={`link ${window.location.pathname === "/" || window.location.pathname.startsWith("/services") ? "active" : ""}`}
+          onClick={() => {
+            if (window.location.pathname !== "/") {
+              nav("/");
+              setTimeout(() => {
+                document.getElementById("services-section")?.scrollIntoView({ behavior: "smooth" });
+              }, 120);
+            } else {
+              document.getElementById("services-section")?.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+        >
+          Services
+        </button>
 
         {user && (
           <>
