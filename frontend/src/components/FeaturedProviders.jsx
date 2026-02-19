@@ -39,19 +39,11 @@ export default function FeaturedProviders() {
             <Loader label="Finding the best professionals..." />
           </div>
         ) : (
-          <>
             <div className="provider-grid featured-grid">
               {providers.map((p, idx) => (
                 <ProviderCard key={p.userId} p={p} idx={idx} />
               ))}
             </div>
-            
-            <div className="section-footer center" style={{ marginTop: "3rem" }}>
-              <Link to="/search" className="btn ghost">
-                View all providers
-              </Link>
-            </div>
-          </>
         )}
       </div>
     </section>
