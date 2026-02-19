@@ -1818,3 +1818,24 @@ a{ color:inherit; text-decoration:none; }
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   }
 }
+
+/* --- FEATURED SECTION STYLES --- */
+.featured-section {
+  padding: 6rem 2rem;
+  background: rgba(255, 255, 255, 0.01);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .featured-grid {
+    grid-template-columns: 1fr;
+  }
+}

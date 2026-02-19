@@ -105,6 +105,29 @@ router.get("/search", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/providers/featured
+ * Returns the top 6 featured providers based on ratingAvg.
+ */
+router.get("/featured", async (req, res) => {
+  try {
+    const featured = await ProviderProfile.find({
+      isActive: true,
+      onboardingComplete: true,
+    })
+      .sort({ ratingAvg: -1, ratingCount: -1, completedJobsCount: -1 })
+      .limit(6)
+      .select(
+        "userId displayName bio city addressArea categoryIds pricingType basePrice isVerified isActive ratingAvg ratingCount completedJobsCount"
+      )
+      .lean();
+
+    res.json(featured);
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
 // ✅ Get my provider profile
 router.get("/me", requireAuth, requireRole("provider"), async (req, res) => {
   const p = await ProviderProfile.findOne({ userId: req.user.id }).lean();

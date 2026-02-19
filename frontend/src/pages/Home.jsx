@@ -5,6 +5,7 @@ import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
 import HeroCarousel from "../components/HeroCarousel";
 import ServicesSection from "../components/ServicesSection";
+import FeaturedProviders from "../components/FeaturedProviders";
 
 export default function Home() {
   const { token } = useAuth();
@@ -51,6 +52,9 @@ export default function Home() {
       <section className="heroMega">
         <HeroCarousel stats={stats} className="heroMegaCarousel" />
       </section>
+
+      {/* ✅ FEATURED PROVIDERS */}
+      <FeaturedProviders />
 
       {/* ✅ SERVICES SECTION */}
       <div id="services-section">
