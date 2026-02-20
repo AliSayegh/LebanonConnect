@@ -144,6 +144,14 @@ a{ color:inherit; text-decoration:none; }
 
 .btn.full{ width:100%; padding: 12px 14px; }
 
+.btn.report{
+ background: rgba(241, 9, 9, 0.945);
+  border:1px solid rgba(255, 255, 255, .10);
+  color:#fff;
+}
+.btn.report:hover{ background: rgba(241, 9, 9, 0.705); }
+
+
 .card{
   background: var(--glass);
   border:1px solid var(--line);

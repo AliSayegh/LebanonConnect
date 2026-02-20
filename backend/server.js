@@ -4,6 +4,7 @@ const cors = require("cors");
 const http = require("http");
 const mongoose = require("mongoose");
 const { Server } = require("socket.io");
+const reportRoutes = require("./routes/reportRoutes");
 const authRoutes = require("./routes/authroutes");
 const jobRoutes = require("./routes/jobRoutes");
 const messageRoutes = require("./routes/messageRoutes");
@@ -21,6 +22,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/subscriptions", require("./routes/subscriptionRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
+app.use("/api/reports", reportRoutes); 
 
 // ✅ Global Error Handler
 app.use((err, req, res, next) => {

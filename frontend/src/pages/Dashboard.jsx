@@ -58,6 +58,12 @@ export default function Dashboard({ notify }) {
   const [confirmJob, setConfirmJob] = useState(null);
   const [finalPrice, setFinalPrice] = useState("");
 
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportJob, setReportJob] = useState(null);
+  const [reportType, setReportType] = useState("");
+  const [reportDetails, setReportDetails] = useState("");
+
+
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewJob, setReviewJob] = useState(null);
   const [rating, setRating] = useState(5);
@@ -162,6 +168,47 @@ export default function Dashboard({ notify }) {
     }
   };
 
+  const submitReport = async () => {
+  try {
+    if (!reportType) {
+      return notify?.(
+        "error",
+        "Missing type",
+        "Please select a report type"
+      );
+    }
+
+    if (!reportJob) return;
+
+    // determine who is being reported
+    const reportedUserId =
+      user?.role === "customer"
+        ? reportJob.providerId
+        : reportJob.customerId;
+
+    await client.post("/api/reports", {
+      reportedUserId,
+      jobId: reportJob._id,
+      type: reportType,
+      details: reportDetails,
+    });
+
+    notify?.("success", "Report submitted", "We will review it.");
+
+    setReportOpen(false);
+    setReportJob(null);
+    setReportType("");
+    setReportDetails("");
+
+  } catch (e) {
+    notify?.(
+      "error",
+      "Report failed",
+      e?.response?.data?.message || "Server error"
+    );
+  }
+};
+
   const empty = !loading && jobs.length === 0;
 
   return (
@@ -258,6 +305,18 @@ export default function Dashboard({ notify }) {
                 <Link className="btn ghost" to={`/chat/${job._id}`}>
                   Open Chat
                 </Link>
+
+                {user?.role === "customer"  && (
+                  <button
+                    className="btn report"
+                    onClick={() => {
+                          setReportJob(job);
+                         setReportOpen(true);
+                        }}
+                  >
+                    Report
+                  </button>
+                )}
 
                 {user?.role === "provider" && status === "open" && (
                   <button
@@ -377,6 +436,59 @@ export default function Dashboard({ notify }) {
           </div>
         </div>
       </Modal>
+       {/* Report Modal */}
+      <Modal
+        open={reportOpen}
+        title="Leave a report"
+        onClose={() => setReportOpen(false)}
+      >
+        <div className="modalBody">
+  <p className="muted">
+    Please select the reason for reporting this user.
+  </p>
+
+  <label className="field">
+    <div className="label">Report Type *</div>
+    <select
+      className="input"
+      value={reportType}
+      onChange={(e) => setReportType(e.target.value)}
+    >
+      <option value="">Select type</option>
+      <option value="phone_share">Phone number sharing</option>
+      <option value="scam">Scam / Fraud</option>
+      <option value="abuse">Abusive behavior</option>
+      <option value="spam">Spam</option>
+    </select>
+  </label>
+
+  <label className="field">
+    <div className="label">Details (optional)</div>
+    <textarea
+      className="input"
+      rows={4}
+      value={reportDetails}
+      onChange={(e) => setReportDetails(e.target.value)}
+      placeholder="Describe what happened..."
+    />
+  </label>
+
+  <div className="rowEnd">
+    <button
+      className="btn ghost"
+      onClick={() => setReportOpen(false)}
+    >
+      Cancel
+    </button>
+    <button
+      className="btn primary"
+      onClick={submitReport}
+    >
+      Submit Report
+    </button>
+  </div>
+</div>
+</Modal>
     </div>
   );
 }
