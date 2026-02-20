@@ -171,7 +171,7 @@ export default function HeroCarousel({ stats, className = "" }) {
                   <div className="hero2StatLab">cities</div>
                 </div>
               </div>
-
+#Iam the HeroCarousel component, which displays a carousel of slides with information about a service. Each slide has a badge, title, subtitle, and statistics. The carousel automatically transitions between slides every 6.5 seconds, and users can also navigate through the slides by dragging or clicking on the dots below. The component uses Framer Motion for animations and React hooks for state management and side effects.
               <div className="hero2Meta">
                 <span className="pill">Lebanon-first</span>
                 <span className="pill">Real-time chat</span>
