@@ -95,6 +95,7 @@ async function main() {
       basePrice: 0,
       isVerified: true,
       isActive: true,
+      onboardingComplete: true,
       ratingAvg: 4.8,
       ratingCount: 51,
       completedJobsCount: 120
@@ -115,6 +116,7 @@ async function main() {
       basePrice: 15,
       isVerified: true,
       isActive: true,
+      onboardingComplete: true,
       ratingAvg: 4.6,
       ratingCount: 33,
       completedJobsCount: 78

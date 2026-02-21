@@ -799,13 +799,13 @@ a{ color:inherit; text-decoration:none; }
 @media(max-width:900px){ .gridStats{ grid-template-columns: 1fr 1fr; } }
 @media(max-width:520px){ .gridStats{ grid-template-columns: 1fr; } }
 
-.statCard .statValue{ font-weight: 900; font-size: 22px; margin-top: 6px; }
-
-.tableHead{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom: 10px; }
-.table{ display:flex; flex-direction:column; gap:8px; }
+.statCard .statValue{ font-weight: 700; font-size: 18px; margin: 8px; text-align: center;}
+.muted.tiny{ padding-left: 10px; padding-top: 5px;}
+.tableHead{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom: 10px; margin-left: 8px;margin-right: 8px;}
+.table{ display:flex; flex-direction:column; gap:8px; margin-left: 8px;margin-right: 8px; margin-bottom: 8px; }
 .tr{
   display:grid;
-  grid-template-columns: 1.3fr .8fr .6fr .7fr .8fr;
+  grid-template-columns: 1.3fr .8fr .6fr .7fr .8fr .7fr;
   gap:10px;
   padding: 10px 10px;
   border-radius: 14px;
