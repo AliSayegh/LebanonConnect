@@ -22,6 +22,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/subscriptions", require("./routes/subscriptionRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/categories", require("./routes/categoryRoutes"));
+app.use("/api/platform", require("./routes/platformRoutes"));
 app.use("/api/reports", reportRoutes); 
 
 // ✅ Global Error Handler
