@@ -6,6 +6,7 @@ import { useAuth } from "../auth/useAuth";
 import HeroCarousel from "../components/HeroCarousel";
 import ServicesSection from "../components/ServicesSection";
 import FeaturedProviders from "../components/FeaturedProviders";
+import StatsSection from "../components/StatsSection";
 
 export default function Home() {
   const { token } = useAuth();
@@ -55,6 +56,9 @@ export default function Home() {
 
       {/* ✅ FEATURED PROVIDERS */}
       <FeaturedProviders />
+
+      {/* ✅ ANIMATED STATS */}
+      <StatsSection />
 
       {/* ✅ SERVICES SECTION */}
       <div id="services-section">
