@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
+import { Link } from "react-router-dom";
 
 function StatCard({ label, value }) {
   return (
@@ -88,6 +89,7 @@ export default function Admin({ notify }) {
             <div>Verified</div>
             <div>Plan</div>
             <div>Rating</div>
+            <div>Profile</div>
           </div>
 
           {providers.map((p) => (
@@ -97,6 +99,12 @@ export default function Admin({ notify }) {
               <div>{p.isVerified ? "✅" : "—"}</div>
               <div>{p.subscription?.plan || "free"}</div>
               <div>{(p.ratingAvg || 0).toFixed(1)} ({p.ratingCount || 0})</div>
+              <div>
+      <Link to={`/provider/${p.userId}`} className="viewBtn">
+  View
+</Link>
+    </div>
+              
             </div>
           ))}
         </div>

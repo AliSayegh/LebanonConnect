@@ -261,6 +261,128 @@ a{ color:inherit; text-decoration:none; }
   .heroTitle{ font-size: 34px; }
 }
 
+/* --- Admin Panel Container --- */
+.adminPanel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 18px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* --- Admin Panel Title --- */
+.adminTitle {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--accent2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+/* --- Delete Button --- */
+.adminActions .btn.danger {
+  background-color: #e74c3c; /* vivid red */
+  color: #fff;
+  border: none;
+  transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.adminActions .btn.danger:hover{
+  background-color: #c0392b; /* darker red on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* --- Admin Actions Buttons --- */
+.adminActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.adminActions .btn.ghost {
+  background-color: transparent;
+  color: #d4a017; /* yellow theme color */
+  border: 1px solid #d4a017;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.adminActions .btn.ghost:hover:not(:disabled) {
+  background-color: #d4a017; /* fill with yellow on hover */
+  color: #000; /* black text on hover for contrast */
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.adminActions .btn.ghost:disabled {
+  color: #f1c40f;
+  border-color: #f1c40f;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* --- Verify & Add Strike buttons (yellow theme) --- */
+.adminActions .btn.success,  /* Verify button */
+.adminActions .btn.warning   /* + Add Strike button */ {
+  background-color: #f1c40f; /* yellow theme */
+  color: #000; /* dark text for contrast */
+  border: none;
+  font-weight: 700;
+  transition: all 0.2s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.adminActions .btn.success:hover:not(:disabled),
+.adminActions .btn.warning:hover:not(:disabled) {
+  background-color: #d4ac0d; /* slightly darker yellow on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.adminActions .btn.success:disabled,
+.adminActions .btn.warning:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Strikes display --- */
+.strike.counter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #ff6961;
+}
+
+.strikeContainer {
+  display: flex;
+  gap: 6px;
+}
+
+.strikeCircle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid #ff6961;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.strikeCircle.filled {
+  background: #ff6961;
+}
+
+/* --- Responsive tweaks --- */
+@media (max-width: 600px) {
+  .adminActions {
+    flex-direction: column;
+  }
+  .adminActions .btn {
+    flex: unset;
+    width: 100%;
+  }
+}
 .providerCard{
   position:relative;
   overflow:hidden;
@@ -500,7 +622,23 @@ a{ color:inherit; text-decoration:none; }
   border-color: rgba(212,160,23,.55);
   box-shadow: 0 0 0 4px rgba(212,160,23,.12);
 }
-
+.strikeContainer {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.strikeCircle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.5);
+  background-color: rgba(255,255,255,0.1);
+  transition: background-color 0.3s, border-color 0.3s; /* smooth transition */
+}
+.strikeCircle.filled {
+  background-color: red;
+  border-color: red;
+}
 /* Profile */
 .profileCard{ width: min(760px, 96vw); padding: 18px; }
 .profileTop{ display:flex; gap: 14px; align-items:center; }
@@ -799,13 +937,13 @@ a{ color:inherit; text-decoration:none; }
 @media(max-width:900px){ .gridStats{ grid-template-columns: 1fr 1fr; } }
 @media(max-width:520px){ .gridStats{ grid-template-columns: 1fr; } }
 
-.statCard .statValue{ font-weight: 900; font-size: 22px; margin-top: 6px; }
-
-.tableHead{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom: 10px; }
-.table{ display:flex; flex-direction:column; gap:8px; }
+.statCard .statValue{ font-weight: 700; font-size: 18px; margin: 8px; text-align: center;}
+.muted.tiny{ padding-left: 10px; padding-top: 5px;}
+.tableHead{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom: 10px; margin-left: 8px;margin-right: 8px;}
+.table{ display:flex; flex-direction:column; gap:8px; margin-left: 8px;margin-right: 8px; margin-bottom: 8px; }
 .tr{
   display:grid;
-  grid-template-columns: 1.3fr .8fr .6fr .7fr .8fr;
+  grid-template-columns: 1.3fr .8fr .6fr .7fr .8fr .7fr;
   gap:10px;
   padding: 10px 10px;
   border-radius: 14px;

@@ -10,8 +10,6 @@ const providerProfileSchema = new mongoose.Schema(
     city: { type: String, required: true, trim: true },
     addressArea: { type: String, default: "", trim: true },
 
-    categoryIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category", index: true }],
-
     pricingType: { type: String, enum: ["fixed", "hourly", "quote"], default: "quote" },
     basePrice: { type: Number, default: 0 },
 
@@ -29,6 +27,7 @@ const providerProfileSchema = new mongoose.Schema(
     },
     onboardingComplete: { type: Boolean, default: false, index: true },
     categoryIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category", index: true }],
+    strike: {type: Number, default: 0 , max: 3, min: 0} ,
 
 
   },

@@ -80,7 +80,10 @@ export default function ProviderProfile({ notify }) {
           throw new Error("Provider not found.");
         }
 
-        if (alive) setP(found);
+         if (alive) {
+        
+        setP({ ...found, strike: Number(found.strike || 0) });
+      }
       } catch (e) {
         const msg = e?.response?.data?.message || e?.message || "Not found";
         notify?.("error", "Provider load failed", msg);
@@ -161,8 +164,131 @@ export default function ProviderProfile({ notify }) {
     );
   }
 
+  // admin functions
+
+  const handleDelete = async () => {
+  if (!window.confirm("Are you sure you want to delete this provider?")) return;
+
+  try {
+    await client.delete(`/api/admin/provider/${userId}`);
+    notify?.("success", "Deleted", "Provider deleted successfully");
+    nav("/");
+  } catch (e) {
+    notify?.("error", "Error", "Failed to delete provider");
+  }
+};
+
+const handleVerify = async () => {
+  try {
+    const res = await client.patch(`/api/admin/provider/${userId}/verify`);
+    setP(res.data);
+    notify?.("success", "Verified", "Provider verified");
+  } catch {
+    notify?.("error", "Error", "Verification failed");
+  }
+};
+
+const handleUnverify = async () => {
+  try {
+    const res = await client.patch(`/api/admin/provider/${userId}/unverify`);
+    setP(res.data);
+    notify?.("success", "Updated", "Verification removed");
+  } catch {
+    notify?.("error", "Error", "Operation failed");
+  }
+};
+
+const handleAddStrike = async () => {
+  if (!p) return;
+  const currentStrike = Number(p.strike || 0);
+  if (currentStrike >= 3) return;
+
+  // Optimistic UI update
+  setP(prev => ({ ...prev, strike: currentStrike + 1 }));
+
+  try {
+    const res = await client.patch(`/api/admin/provider/${userId}/strike/add`);
+    const updatedStrike = Number(res.data.strike ?? currentStrike + 1);
+    setP(prev => ({ ...prev, ...res.data, strike: updatedStrike }));
+    notify?.("success", "Strike added");
+  } catch {
+    // rollback
+    setP(prev => ({ ...prev, strike: currentStrike }));
+    notify?.("error", "Error", "Cannot add strike");
+  }
+};
+
+const handleRemoveStrike = async () => {
+  if (!p) return;
+  const currentStrike = Number(p.strike || 0);
+  if (currentStrike <= 0) return;
+
+  setP(prev => ({ ...prev, strike: currentStrike - 1 }));
+
+  try {
+    const res = await client.patch(`/api/admin/provider/${userId}/strike/remove`);
+    const updatedStrike = Number(res.data.strike ?? currentStrike - 1);
+    setP(prev => ({ ...prev, ...res.data, strike: updatedStrike }));
+    notify?.("success", "Strike removed");
+  } catch {
+    setP(prev => ({ ...prev, strike: currentStrike }));
+    notify?.("error", "Error", "Cannot remove strike");
+  }
+};
+
+function Strikes({ count = 0, max = 3 }) {
+  const c = Number(count || 0);
+  return (
+    <div className="strikeContainer">
+      {Array.from({ length: max }).map((_, i) => (
+        <span key={i} className={`strikeCircle ${i < c ? "filled" : ""}`} />
+      ))}
+    </div>
+  );
+}
   return (
     <div className="page">
+      {user?.role === "admin" && (
+  <div className="adminPanel">
+    <div className="adminTitle">Admin Controls </div>
+
+    <div className="adminActions">
+      <button className="btn danger" onClick={handleDelete}>
+        Delete Provider
+      </button>
+
+      {!p.isVerified ? (
+        <button className="btn success" onClick={handleVerify}>
+          Verify
+        </button>
+      ) : (
+        <button className="btn ghost" onClick={handleUnverify}>
+          Remove Verification
+        </button>
+      )}
+
+     <button
+  className="btn warning"
+  disabled={p.strike >= 3}
+  onClick={handleAddStrike}
+>
+  + Add Strike
+</button>
+
+<button
+  className="btn ghost"
+  onClick={handleRemoveStrike}
+>
+  - Remove Strike
+</button>
+    </div>
+
+  <div className="strike counter">
+  Current Strikes: <Strikes count={p.strike} max={3} />
+  
+</div>
+  </div>
+)}
       <motion.div
         className="card profileCard"
         initial={{ opacity: 0, y: 18 }}
