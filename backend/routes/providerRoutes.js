@@ -87,8 +87,8 @@ router.get("/search", async (req, res) => {
         .skip(skip)
         .limit(lim)
         .select(
-          "userId displayName bio city addressArea categoryIds pricingType basePrice isVerified isActive ratingAvg ratingCount completedJobsCount createdAt"
-        )
+  "userId displayName bio city addressArea categoryIds pricingType basePrice isVerified isActive ratingAvg ratingCount completedJobsCount createdAt strike"
+)
         .lean(),
       ProviderProfile.countDocuments(q),
     ]);
