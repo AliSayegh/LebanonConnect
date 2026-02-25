@@ -41,13 +41,16 @@ const STATS = [
 ];
 
 /* ── single animated card ── */
-function StatCard({ stat, value, started }) {
+function StatCard({ stat, value, started, index }) {
   const count = useCountUp(value ?? 0, 2000, started);
   const display = stat.decimal ? fmtDec(count) : fmtInt(count);
 
   return (
     <div className="platform-stat-card">
-      <div className="platform-stat-icon-wrap">
+      <div 
+        className="platform-stat-icon-wrap" 
+        style={{ transitionDelay: `${index * 100}ms` }}
+      >
         <img src={stat.icon} alt={stat.label} className="platform-stat-icon" />
       </div>
       <span className="platform-stat-number">{display}{stat.decimal ? " ★" : "+"}</span>
@@ -63,6 +66,7 @@ export default function StatsSection() {
 
   const [data, setData] = useState(null);
   const [started, setStarted] = useState(false);
+  const [numbersStarted, setNumbersStarted] = useState(false);
   const sectionRef = useRef(null);
 
   /* fetch stats */
@@ -94,8 +98,22 @@ export default function StatsSection() {
     return () => obs.disconnect();
   }, [observerCb]);
 
+  /* Delayed number animation — runs once icons settle (stagger + duration) */
+  useEffect(() => {
+    if (started && data != null) {
+      // 6 cards * 100ms stagger + ~700ms animation duration = ~1300ms
+      const timer = setTimeout(() => {
+        setNumbersStarted(true);
+      }, 1300);
+      return () => clearTimeout(timer);
+    }
+  }, [started, data]);
+
   return (
-    <section className="platform-stats" ref={sectionRef}>
+    <section 
+      className={`platform-stats ${started ? 'visible' : ''}`} 
+      ref={sectionRef}
+    >
       <div className="container">
         <div className="section-header">
           <div className="miniBadge" style={{ marginBottom: "12px" }}>Platform Highlights</div>
@@ -106,12 +124,13 @@ export default function StatsSection() {
         </div>
 
         <div className="platform-stats-grid">
-          {STATS.map((stat) => (
+          {STATS.map((stat, index) => (
             <StatCard
               key={stat.key}
               stat={stat}
+              index={index}
               value={data ? data[stat.key] : 0}
-              started={started && data != null}
+              started={numbersStarted}
             />
           ))}
         </div>
