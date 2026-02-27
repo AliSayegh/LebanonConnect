@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const Report = require("../Models/Report");
-const { requireAuth } = require("../middleware/auth");
+const { requireAuth } = require("../Middleware/auth");
 
 // creat report
 router.post("/", requireAuth, async (req, res) => {
