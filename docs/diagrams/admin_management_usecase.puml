@@ -1,0 +1,48 @@
+@startuml Admin Management Use Case Diagram
+
+title LebanonConnect — Admin Moderation & Stats
+
+actor "Admin" as Admin
+actor "Authenticated User" as AuthUser
+
+Admin --|> AuthUser
+
+rectangle "Admin Subsystem" {
+  usecase "Manage Providers" as UC_Manage
+  usecase "View Platform Stats" as UC_Stats
+  usecase "Authenticate User" as UC_Auth
+  
+  usecase "Verify/Unverify Provider" as UC_Verify
+  usecase "Delete Provider Account" as UC_Delete
+  usecase "Manage Strikes" as UC_Strikes
+}
+
+Admin --> UC_Manage
+Admin --> UC_Stats
+
+UC_Manage <|-- UC_Verify
+UC_Manage <|-- UC_Delete
+UC_Manage <|-- UC_Strikes
+
+UC_Manage ..> UC_Auth : <<include>>
+UC_Stats ..> UC_Auth : <<include>>
+
+note bottom of UC_Stats
+  GET /api/admin/stats
+  - Total Jobs
+  - Confirmed Jobs
+  - Revenue (Commission Sum)
+  - Subscription Plan Distribution
+end note
+
+note bottom of UC_Strikes
+  PATCH /api/admin/provider/:id/strike/add
+  - Auto-unverify at 3 strikes
+end note
+
+skinparam usecase {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+
+@enduml
