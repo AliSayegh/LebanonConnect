@@ -1,0 +1,66 @@
+@startuml Authentication Sub-Diagram
+
+title LebanonConnect — Authentication Flow Detail
+
+actor "Guest"               as Guest
+actor "Authenticated User"  as AuthUser
+
+rectangle "Authentication Subsystem" {
+
+  usecase "Register"           as UC_Register
+  usecase "Login"              as UC_Login
+  usecase "Authenticate User"  as UC_Auth
+  usecase "JWT Validation"     as UC_JWT
+
+}
+
+Guest     --> UC_Register
+Guest     --> UC_Login
+
+AuthUser  --> UC_Auth
+
+UC_Auth   ..> UC_JWT      : <<include>>
+
+note right of UC_Register
+  POST /api/auth/register
+  - Email uniqueness check
+  - Password bcrypt hash (salt=10)
+  - Role: customer | provider
+  - Creates role-specific profile doc
+end note
+
+note right of UC_Login
+  POST /api/auth/login
+  - Finds active user by email
+  - bcrypt.compare password
+  - Signs JWT (payload: id, role)
+  - Expiry: 7 days
+end note
+
+note right of UC_Auth
+  requireAuth middleware:
+  - Extracts Bearer token from header
+  - Calls jwt.verify(token, JWT_SECRET)
+  - Confirms user still active in DB
+  - Attaches decoded {id, role} to req.user
+end note
+
+note right of UC_JWT
+  jsonwebtoken library
+  - Algorithm: HS256 (default)
+  - Secret: process.env.JWT_SECRET
+  - Throws JsonWebTokenError on tamper
+  - Throws TokenExpiredError after 7d
+end note
+
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FFF9C4
+  BorderColor     #F9A825
+}
+skinparam actor {
+  BackgroundColor #FCE4EC
+  BorderColor     #C62828
+}
+
+@enduml
