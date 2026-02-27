@@ -1,0 +1,109 @@
+@startuml LebanonConnect System Use Case Diagram
+
+' ─────────────────────────────────────────────────────────────────
+'  TITLE
+' ─────────────────────────────────────────────────────────────────
+title LebanonConnect — Full System Use Case Diagram
+
+' ─────────────────────────────────────────────────────────────────
+'  ACTORS
+' ─────────────────────────────────────────────────────────────────
+actor "Guest"               as Guest
+actor "Authenticated User"  as AuthUser
+actor "Customer"            as Customer
+actor "Provider"            as Provider
+actor "Admin"               as Admin
+
+' Actor inheritance (generalisation)
+Customer  --|> AuthUser
+Provider  --|> AuthUser
+Admin     --|> AuthUser
+
+' ─────────────────────────────────────────────────────────────────
+'  SYSTEM BOUNDARY
+' ─────────────────────────────────────────────────────────────────
+rectangle "LebanonConnect Platform" {
+
+  ' ── Public Use Cases ──────────────────────────────────────────
+  usecase "Register"            as UC_Register
+  usecase "Login"               as UC_Login
+
+  ' ── Core Infrastructure ───────────────────────────────────────
+  usecase "Authenticate User"   as UC_Auth
+  usecase "JWT Validation"      as UC_JWT
+
+  ' ── Customer Use Cases ────────────────────────────────────────
+  usecase "Create Job"          as UC_CreateJob
+  usecase "Confirm Job\nCompletion" as UC_Confirm
+  usecase "Leave Review"        as UC_LeaveReview
+
+  ' ── Provider Use Cases ────────────────────────────────────────
+  usecase "Accept Job"          as UC_AcceptJob
+  usecase "Complete Job"        as UC_CompleteJob
+
+  ' ── Shared (Chat) ─────────────────────────────────────────────
+  usecase "Chat (View/Send\nMessages)" as UC_Chat
+
+  ' ── Admin Use Cases ───────────────────────────────────────────
+  usecase "Manage Providers"    as UC_ManageProviders
+  usecase "View Platform Stats" as UC_Stats
+
+}
+
+' ─────────────────────────────────────────────────────────────────
+'  ACTOR → USE CASE ASSOCIATIONS
+' ─────────────────────────────────────────────────────────────────
+Guest     --> UC_Register
+Guest     --> UC_Login
+
+Customer  --> UC_CreateJob
+Customer  --> UC_Confirm
+Customer  --> UC_LeaveReview
+Customer  --> UC_Chat
+
+Provider  --> UC_AcceptJob
+Provider  --> UC_CompleteJob
+Provider  --> UC_Chat
+
+Admin     --> UC_ManageProviders
+Admin     --> UC_Stats
+
+' ─────────────────────────────────────────────────────────────────
+'  <<INCLUDE>> RELATIONSHIPS
+'  Every protected use case includes Authenticate User.
+'  Authenticate User includes JWT Validation.
+' ─────────────────────────────────────────────────────────────────
+UC_CreateJob    ..> UC_Auth      : <<include>>
+UC_AcceptJob    ..> UC_Auth      : <<include>>
+UC_CompleteJob  ..> UC_Auth      : <<include>>
+UC_Confirm      ..> UC_Auth      : <<include>>
+UC_Chat         ..> UC_Auth      : <<include>>
+UC_LeaveReview  ..> UC_Auth      : <<include>>
+UC_ManageProviders ..> UC_Auth   : <<include>>
+UC_Stats        ..> UC_Auth      : <<include>>
+
+UC_Auth         ..> UC_JWT       : <<include>>
+
+' ─────────────────────────────────────────────────────────────────
+'  <<EXTEND>> RELATIONSHIP
+'  Leave Review is conditional on the job being "confirmed".
+' ─────────────────────────────────────────────────────────────────
+UC_LeaveReview  ..> UC_Confirm   : <<extend>>\n{condition: job.status == 'confirmed'}
+
+' ─────────────────────────────────────────────────────────────────
+'  STYLING
+' ─────────────────────────────────────────────────────────────────
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #F0F8FF
+  BorderColor     #2196F3
+  FontSize        12
+}
+skinparam actor {
+  BackgroundColor #E8F5E9
+  BorderColor     #388E3C
+}
+skinparam ArrowColor #546E7A
+skinparam linetype ortho
+
+@enduml
