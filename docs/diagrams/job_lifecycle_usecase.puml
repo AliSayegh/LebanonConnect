@@ -1,0 +1,60 @@
+@startuml Job Lifecycle Use Case Diagram
+
+title LebanonConnect — Job Lifecycle Flow
+
+actor "Customer" as Customer
+actor "Provider" as Provider
+actor "Authenticated User" as AuthUser
+
+Customer --|> AuthUser
+Provider --|> AuthUser
+
+rectangle "Job Management Subsystem" {
+  usecase "Create Job" as UC_Create
+  usecase "Accept Job" as UC_Accept
+  usecase "Complete Job" as UC_Complete
+  usecase "Confirm Job Completion" as UC_Confirm
+  usecase "Authenticate User" as UC_Auth
+}
+
+Customer --> UC_Create
+Provider --> UC_Accept
+Provider --> UC_Complete
+Customer --> UC_Confirm
+
+UC_Create ..> UC_Auth : <<include>>
+UC_Accept ..> UC_Auth : <<include>>
+UC_Complete ..> UC_Auth : <<include>>
+UC_Confirm ..> UC_Auth : <<include>>
+
+note right of UC_Create
+  POST /api/jobs
+  - Status: "open"
+  - Customer assigns to specific Provider
+end note
+
+note right of UC_Accept
+  PATCH /api/jobs/:id/accept
+  - Status: "open" -> "accepted"
+  - Checks subscription limits (free: 3/mo)
+  - Increments provider's completedJobsCount
+end note
+
+note right of UC_Complete
+  PATCH /api/jobs/:id/complete
+  - Status: "accepted" -> "completed"
+end note
+
+note right of UC_Confirm
+  PATCH /api/jobs/:id/confirm
+  - Status: "completed" -> "confirmed"
+  - Customer sets finalPrice
+  - Commission is calculated
+end note
+
+skinparam usecase {
+  BackgroundColor #E1F5FE
+  BorderColor #01579B
+}
+
+@enduml

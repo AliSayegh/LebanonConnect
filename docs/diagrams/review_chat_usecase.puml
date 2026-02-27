@@ -1,0 +1,46 @@
+@startuml Review and Chat Use Case Diagram
+
+title LebanonConnect — Review & Communication
+
+actor "Customer" as Customer
+actor "Provider" as Provider
+actor "Authenticated User" as AuthUser
+
+Customer --|> AuthUser
+Provider --|> AuthUser
+
+rectangle "Communication Subsystem" {
+  usecase "Leave Review" as UC_Review
+  usecase "Chat (View/Send Messages)" as UC_Chat
+  usecase "Authenticate User" as UC_Auth
+  usecase "Confirm Job Completion" as UC_Confirm
+}
+
+Customer --> UC_Review
+Customer --> UC_Chat
+Provider --> UC_Chat
+
+UC_Review ..> UC_Auth : <<include>>
+UC_Chat ..> UC_Auth : <<include>>
+
+UC_Review ..> UC_Confirm : <<extend>>\n{condition: status == 'confirmed'}
+
+note right of UC_Review
+  POST /api/reviews
+  - Requires status: "confirmed"
+  - Updates Provider ratingAvg/ratingCount
+  - One review per job
+end note
+
+note right of UC_Chat
+  GET /api/messages/job/:jobId
+  - Participant-only access
+  - Cursor-based pagination (before parameter)
+end note
+
+skinparam usecase {
+  BackgroundColor #F3E5F5
+  BorderColor #4A148C
+}
+
+@enduml

@@ -10,6 +10,9 @@ This directory contains the complete UML Use Case documentation for the **Lebano
 | [`uml_justification.md`](./uml_justification.md) | Academically rigorous justification of all UML modelling decisions |
 | [`diagrams/system_use_case.puml`](./diagrams/system_use_case.puml) | PlantUML source — Full System Use Case Diagram |
 | [`diagrams/authentication_usecase.puml`](./diagrams/authentication_usecase.puml) | PlantUML source — Authentication Sub-Diagram |
+| [`diagrams/job_lifecycle_usecase.puml`](./diagrams/job_lifecycle_usecase.puml) | PlantUML source — Job Lifecycle Sub-Diagram |
+| [`diagrams/review_chat_usecase.puml`](./diagrams/review_chat_usecase.puml) | PlantUML source — Review & Chat Sub-Diagram |
+| [`diagrams/admin_management_usecase.puml`](./diagrams/admin_management_usecase.puml) | PlantUML source — Admin Management Sub-Diagram |
 
 ## How to Render Diagrams
 
