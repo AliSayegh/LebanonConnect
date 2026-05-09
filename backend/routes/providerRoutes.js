@@ -4,6 +4,7 @@ const ProviderProfile = require("../Models/ProviderProfile");
 const Category = require("../Models/Category");
 const { requireAuth, requireRole } = require("../Middleware/auth");
 const { isValidLebanonCity } = require("../utils/lebanonCities");
+const { getDistrictByCity } = require("../utils/locations");
 
 /**
  * GET /api/providers/search
@@ -207,6 +208,7 @@ router.patch("/me", requireAuth, requireRole("provider"), async (req, res) => {
       displayName: displayName.trim(),
       bio: bioStr,
       city: city.trim(),
+      district: getDistrictByCity(city),
       addressArea: addressArea.trim(),
       categoryIds: categoryIds.map((x) => new mongoose.Types.ObjectId(x)),
       pricingType: pt,

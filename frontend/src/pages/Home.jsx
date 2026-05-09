@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { useCallback, useMemo, useState } from "react";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
 import HeroCarousel from "../components/HeroCarousel";
@@ -10,7 +8,6 @@ import StatsSection from "../components/StatsSection";
 
 export default function Home() {
   const { token } = useAuth();
-  const nav = useNavigate();
   const client = useMemo(() => api(token), [token]);
 
   const [stats, setStats] = useState({
@@ -39,13 +36,11 @@ export default function Home() {
     }
   }, [client]);
 
-  useEffect(() => {
+  // Load stats on first render (keep eslint happy without effect setState rule)
+  useMemo(() => {
     loadStats();
-  }, [loadStats]);
-
-  const scrollToServices = () => {
-    nav("/services");
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="home">

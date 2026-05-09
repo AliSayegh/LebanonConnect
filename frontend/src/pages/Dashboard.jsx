@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
+import CustomSelect from "../components/CustomSelect";
 
 function StatusBadge({ status }) {
   const s = status || "open";
@@ -449,17 +450,18 @@ export default function Dashboard({ notify }) {
 
   <label className="field">
     <div className="label">Report Type *</div>
-    <select
-      className="input"
+    <CustomSelect
       value={reportType}
-      onChange={(e) => setReportType(e.target.value)}
-    >
-      <option value="">Select type</option>
-      <option value="phone_share">Phone number sharing</option>
-      <option value="scam">Scam / Fraud</option>
-      <option value="abuse">Abusive behavior</option>
-      <option value="spam">Spam</option>
-    </select>
+      onChange={(v) => setReportType(v)}
+      options={[
+        { value: "phone_share", label: "Phone number sharing" },
+        { value: "scam", label: "Scam / Fraud" },
+        { value: "abuse", label: "Abusive behavior" },
+        { value: "spam", label: "Spam" },
+      ]}
+      placeholder="Select type"
+      ariaLabel="Report type"
+    />
   </label>
 
   <label className="field">
@@ -489,6 +491,79 @@ export default function Dashboard({ notify }) {
   </div>
 </div>
 </Modal>
+
+      <style>{`
+        .gridJobs {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 16px;
+          margin-top: 20px;
+        }
+        .jobCard {
+          display: flex;
+          flex-direction: column;
+          padding: 18px;
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .jobCard:hover {
+          border-color: rgba(212,160,23,.35);
+        }
+        .jobTop {
+          border-bottom: 1px solid rgba(255,255,255,.08);
+          padding-bottom: 12px;
+          margin-bottom: 12px;
+        }
+        .jobTitleRow {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+        .jobTitle {
+          font-weight: 900;
+          font-size: 18px;
+        }
+        .jobMeta {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+        .jobBody {
+          flex: 1;
+        }
+        .jobMoneyRow {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+          margin-top: 16px;
+          padding: 12px;
+          background: rgba(0,0,0,.25);
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.08);
+        }
+        .jobActions {
+          display: flex;
+          gap: 10px;
+          margin-top: 16px;
+        }
+        .jobActions .btn {
+          flex: 1;
+          display: grid;
+          place-items: center;
+          text-align: center;
+        }
+        .statusBadge {
+          padding: 4px 8px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+        .statusBadge.open { background: rgba(212,160,23,.2); color: var(--accent2); border: 1px solid rgba(212,160,23,.4); }
+        .statusBadge.accepted { background: rgba(60,180,255,.2); color: #80cfff; border: 1px solid rgba(60,180,255,.4); }
+        .statusBadge.completed { background: rgba(60,255,120,.2); color: #80ffaa; border: 1px solid rgba(60,255,120,.4); }
+        .statusBadge.confirmed { background: rgba(180,60,255,.2); color: #d480ff; border: 1px solid rgba(180,60,255,.4); }
+      `}</style>
     </div>
   );
 }

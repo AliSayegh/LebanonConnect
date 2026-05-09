@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import Loader from "./Loader";
 import ProviderCard from "./ProviderCard";
 

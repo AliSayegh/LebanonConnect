@@ -173,7 +173,7 @@ export default function ProviderProfile({ notify }) {
     await client.delete(`/api/admin/provider/${userId}`);
     notify?.("success", "Deleted", "Provider deleted successfully");
     nav("/");
-  } catch (e) {
+  } catch {
     notify?.("error", "Error", "Failed to delete provider");
   }
 };

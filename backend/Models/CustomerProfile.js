@@ -6,6 +6,7 @@ const customerProfileSchema = new mongoose.Schema(
 
     fullName: { type: String, required: true, trim: true },
     city: { type: String, default: "", trim: true },
+    district: { type: String, default: "", trim: true, index: true },
     addressArea: { type: String, default: "", trim: true }
   },
   { timestamps: true }

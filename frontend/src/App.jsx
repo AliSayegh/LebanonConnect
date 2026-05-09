@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AuthProvider } from "./auth/AuthContent";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Navbar from "./components/Navbar";
@@ -23,10 +23,22 @@ import Search from "./pages/Search";
 export default function App() {
   const [toast, setToast] = useState({ show: false });
 
-  const notify = (type, title, message) =>
+  const notify = useCallback((type, title, message) => {
     setToast({ show: true, type, title, message });
+  }, []);
 
-  const clear = () => setToast({ show: false });
+  const clear = useCallback(() => {
+    setToast({ show: false });
+  }, []);
+
+  useEffect(() => {
+    if (toast.show) {
+      const timer = setTimeout(() => {
+        setToast({ show: false });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast.show]);
 
   return (
     <AuthProvider>

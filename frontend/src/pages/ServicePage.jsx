@@ -3,9 +3,10 @@ import { useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
 import ProviderGrid from "../components/ProviderGrid";
-import { LEBANON_CITIES } from "../constants/lebanonCities";
+import { cities as CITY_OPTIONS } from "../constants/locations";
+import CustomSelect from "../components/CustomSelect";
 
-const cities = LEBANON_CITIES;
+const cities = CITY_OPTIONS;
 
 export default function ServicePage({ notify }) {
   const { serviceType } = useParams();
@@ -68,18 +69,15 @@ export default function ServicePage({ notify }) {
         <div className="heroMegaFilters" style={{ marginTop: "2rem" }}>
           <div className="field">
             <div className="fieldLabel">City</div>
-            <select
-              className="input"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-            >
-              <option value="">All Cities</option>
-              {cities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            <div style={{ minWidth: 220 }}>
+              <CustomSelect
+                value={city}
+                onChange={(v) => setCity(v)}
+                options={[{ value: "", label: "All Cities" }, ...cities.map((c) => ({ value: c, label: c }))]}
+                placeholder="All Cities"
+                ariaLabel="City"
+              />
+            </div>
           </div>
 
           <div className="field">

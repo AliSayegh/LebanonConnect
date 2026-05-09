@@ -76,13 +76,25 @@ export default function Navbar() {
             nav(`/search?q=${encodeURIComponent(v)}`);
           }}
         >
-          <input
-            className="input navSearchInput"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search providers or services…"
-            aria-label="Search"
-          />
+          <div className="navSearchInputWrap">
+            <input
+              className="input navSearchInput"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search providers or services…"
+              aria-label="Search"
+            />
+            {q && (
+              <button
+                type="button"
+                className="navSearchClear"
+                onClick={() => setQ("")}
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
           <button className="btn ghost navSearchBtn" type="submit" aria-label="Search">
             Search
           </button>
@@ -112,18 +124,32 @@ export default function Navbar() {
       <style>{`
         .navRight{ display:flex; align-items:center; gap: 10px; }
         .navSearch{ display:flex; align-items:center; gap: 8px; }
+        .navSearchInputWrap { position: relative; display: flex; align-items: center; }
         .navSearchInput{
           width: 260px;
           height: 40px;
           border-radius: 14px;
-          padding: 0 12px;
+          padding: 0 32px 0 12px;
         }
+        .navSearchClear {
+          position: absolute;
+          right: 8px;
+          background: none;
+          border: none;
+          color: rgba(255,255,255,0.5);
+          font-size: 14px;
+          cursor: pointer;
+          padding: 4px;
+          display: grid;
+          place-items: center;
+        }
+        .navSearchClear:hover { color: #fff; }
         .navSearchBtn{ height: 40px; border-radius: 14px; padding: 0 12px; }
         @media(max-width: 980px){
           .navSearchInput{ width: 160px; }
         }
         @media(max-width: 720px){
-          .navSearchInput{ display:none; }
+          .navSearchInputWrap{ display:none; }
           .navSearchBtn{ padding: 0 10px; }
         }
       `}</style>
