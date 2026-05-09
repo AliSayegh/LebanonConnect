@@ -8,8 +8,14 @@ const UserAuth = require("../Models/UserAuth");
 
 
 router.get("/stats", requireAuth, requireRole("admin"), async (req, res) => {
-  const [jobsTotal, confirmed, revenueAgg, subsAgg] = await Promise.all([
+  const Category = require("../Models/Category");
+
+  const [usersTotal, providersTotal, servicesTotal, jobsTotal, completedJobsTotal, confirmed, revenueAgg, subsAgg] = await Promise.all([
+    UserAuth.countDocuments({ status: "active" }),
+    ProviderProfile.countDocuments({}),
+    Category.countDocuments({ isActive: true }),
     Job.countDocuments({}),
+    Job.countDocuments({ status: { $in: ["completed", "confirmed"] } }),
     Job.countDocuments({ status: "confirmed" }),
     Job.aggregate([
       { $match: { status: "confirmed" } },
@@ -21,7 +27,11 @@ router.get("/stats", requireAuth, requireRole("admin"), async (req, res) => {
   ]);
 
   res.json({
+    totalUsers: usersTotal,
+    totalProviders: providersTotal,
+    totalServices: servicesTotal,
     jobsTotal,
+    completedJobsTotal,
     confirmedJobs: confirmed,
     revenue: revenueAgg[0]?.revenue || 0,
     subscriptions: subsAgg
@@ -56,7 +66,6 @@ router.delete("/provider/:id", requireAuth, requireRole("admin"), async (req, re
     }
 
     res.json({ message: "Provider and user account deleted successfully" });
-    res.json({ message: "Provider profile deleted successfully" });
   } catch (err) {
     console.error("Delete provider error:", err);
     res.status(500).json({ message: "Server error deleting provider" });
