@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const ProviderProfile = require("../Models/ProviderProfile");
 const Category = require("../Models/Category");
 const { requireAuth, requireRole } = require("../Middleware/auth");
+const { isValidLebanonCity } = require("../utils/lebanonCities");
 
 /**
  * GET /api/providers/search
@@ -18,6 +19,7 @@ const { requireAuth, requireRole } = require("../Middleware/auth");
 router.get("/search", async (req, res) => {
   try {
     const {
+      q: searchQ,
       city,
       categoryId,
       serviceSlug,
@@ -29,6 +31,26 @@ router.get("/search", async (req, res) => {
     } = req.query;
 
     const q = {};
+
+    // Optional free-text search:
+    // - Provider name (displayName)
+    // - Service title/category (Category name/slug) via categoryIds
+    if (searchQ && String(searchQ).trim()) {
+      const raw = String(searchQ).trim();
+      const escaped = raw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const rx = new RegExp(escaped, "i");
+
+      const matchedCats = await Category.find({
+        isActive: true,
+        $or: [{ name: rx }, { slug: rx }],
+      })
+        .select("_id")
+        .lean();
+      const catIds = matchedCats.map((c) => c._id);
+
+      q.$or = [{ displayName: rx }];
+      if (catIds.length) q.$or.push({ categoryIds: { $in: catIds } });
+    }
 
     // ✅ Handle serviceSlug if provided
     if (serviceSlug) {
@@ -162,18 +184,33 @@ router.patch("/me", requireAuth, requireRole("provider"), async (req, res) => {
     }
 
     // Validate required fields
-    if (!city?.trim()) return res.status(400).json({ message: "City is required" });
+    if (!isValidLebanonCity(city)) return res.status(400).json({ message: "City is required (select a valid Lebanese city)." });
     if (!addressArea?.trim()) return res.status(400).json({ message: "Area is required" });
     if (!displayName?.trim()) return res.status(400).json({ message: "Display name is required" });
 
+    const bioStr = String(bio || "").trim();
+    if (bioStr.length > 500) return res.status(400).json({ message: "Bio must be 500 characters or less" });
+
+    const pt = pricingType || "quote";
+    if (!["fixed", "starting", "quote", "hourly"].includes(pt)) {
+      return res.status(400).json({ message: "Invalid pricing type" });
+    }
+
+    const priceNum = Number(basePrice || 0);
+    if (pt === "fixed" || pt === "starting") {
+      if (!Number.isFinite(priceNum) || priceNum < 0) {
+        return res.status(400).json({ message: "Price must be a number (min 0)" });
+      }
+    }
+
     const update = {
       displayName: displayName.trim(),
-      bio: String(bio || "").trim(),
+      bio: bioStr,
       city: city.trim(),
       addressArea: addressArea.trim(),
       categoryIds: categoryIds.map((x) => new mongoose.Types.ObjectId(x)),
-      pricingType: pricingType || "quote",
-      basePrice: Number(basePrice || 0),
+      pricingType: pt,
+      basePrice: pt === "quote" ? 0 : priceNum,
       isActive: true,
       onboardingComplete: true,
     };
