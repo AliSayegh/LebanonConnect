@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
+import CustomSelect from "../components/CustomSelect";
 
 function StatusBadge({ status }) {
   const s = status || "open";
@@ -54,6 +55,10 @@ export default function Dashboard({ notify }) {
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState([]);
 
+  const [providerProfile, setProviderProfile] = useState(null);
+  const [strikePopupOpen, setStrikePopupOpen] = useState(false);
+  const [latestStrikeReason, setLatestStrikeReason] = useState("");
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmJob, setConfirmJob] = useState(null);
   const [finalPrice, setFinalPrice] = useState("");
@@ -85,9 +90,29 @@ export default function Dashboard({ notify }) {
     }
   }, [client, notify]);
 
+  const loadProviderData = useCallback(async () => {
+    if (user?.role !== "provider") return;
+    try {
+      const [profileRes, strikesRes] = await Promise.all([
+        client.get("/api/providers/me"),
+        client.get("/api/providers/me/strikes")
+      ]);
+      setProviderProfile(profileRes.data.provider);
+      
+      const unread = strikesRes.data.strikes;
+      if (unread && unread.length > 0) {
+        setLatestStrikeReason(unread[unread.length - 1].reason);
+        setStrikePopupOpen(true);
+      }
+    } catch (e) {
+      console.error("Provider data load error", e);
+    }
+  }, [client, user]);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadProviderData();
+  }, [load, loadProviderData]);
 
   const acceptJob = async (jobId) => {
     try {
@@ -319,12 +344,21 @@ export default function Dashboard({ notify }) {
                 )}
 
                 {user?.role === "provider" && status === "open" && (
-                  <button
-                    className="btn primary"
-                    onClick={() => acceptJob(job._id)}
-                  >
-                    Accept
-                  </button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+                    <button
+                      className="btn primary"
+                      disabled={!providerProfile?.isVerified}
+                      onClick={() => acceptJob(job._id)}
+                      style={{ width: "100%" }}
+                    >
+                      Accept
+                    </button>
+                    {!providerProfile?.isVerified && (
+                      <span className="muted tiny" style={{ textAlign: "center", color: "var(--accent2)" }}>
+                        You must be verified by admin to accept jobs.
+                      </span>
+                    )}
+                  </div>
                 )}
 
                 {user?.role === "provider" && status === "accepted" && (
@@ -449,17 +483,18 @@ export default function Dashboard({ notify }) {
 
   <label className="field">
     <div className="label">Report Type *</div>
-    <select
-      className="input"
+    <CustomSelect
       value={reportType}
-      onChange={(e) => setReportType(e.target.value)}
-    >
-      <option value="">Select type</option>
-      <option value="phone_share">Phone number sharing</option>
-      <option value="scam">Scam / Fraud</option>
-      <option value="abuse">Abusive behavior</option>
-      <option value="spam">Spam</option>
-    </select>
+      onChange={(v) => setReportType(v)}
+      options={[
+        { value: "phone_share", label: "Phone number sharing" },
+        { value: "scam", label: "Scam / Fraud" },
+        { value: "abuse", label: "Abusive behavior" },
+        { value: "spam", label: "Spam" },
+      ]}
+      placeholder="Select type"
+      ariaLabel="Report type"
+    />
   </label>
 
   <label className="field">
@@ -489,6 +524,95 @@ export default function Dashboard({ notify }) {
   </div>
 </div>
 </Modal>
+      {/* Strike Modal */}
+      <Modal open={strikePopupOpen} title="⚠️ Strike Received" onClose={() => setStrikePopupOpen(false)}>
+        <div className="modalBody">
+          <p className="muted" style={{ marginBottom: 16 }}>
+            You have received a strike from an administrator. 
+            Accumulating 3 strikes will result in a permanent ban.
+          </p>
+          <div style={{ padding: 16, background: "rgba(255,80,80,0.1)", border: "1px solid rgba(255,80,80,0.3)", borderRadius: 12 }}>
+            <span style={{ color: "#ff8080", fontWeight: "bold" }}>Reason: </span>
+            <span>{latestStrikeReason}</span>
+          </div>
+          <div className="rowEnd" style={{ marginTop: 24 }}>
+            <button className="btn primary" onClick={() => setStrikePopupOpen(false)}>I Understand</button>
+          </div>
+        </div>
+      </Modal>
+
+      <style>{`
+        .gridJobs {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          gap: 16px;
+          margin-top: 20px;
+        }
+        .jobCard {
+          display: flex;
+          flex-direction: column;
+          padding: 18px;
+          transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .jobCard:hover {
+          border-color: rgba(212,160,23,.35);
+        }
+        .jobTop {
+          border-bottom: 1px solid rgba(255,255,255,.08);
+          padding-bottom: 12px;
+          margin-bottom: 12px;
+        }
+        .jobTitleRow {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+        .jobTitle {
+          font-weight: 900;
+          font-size: 18px;
+        }
+        .jobMeta {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+        .jobBody {
+          flex: 1;
+        }
+        .jobMoneyRow {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+          margin-top: 16px;
+          padding: 12px;
+          background: rgba(0,0,0,.25);
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,.08);
+        }
+        .jobActions {
+          display: flex;
+          gap: 10px;
+          margin-top: 16px;
+        }
+        .jobActions .btn {
+          flex: 1;
+          display: grid;
+          place-items: center;
+          text-align: center;
+        }
+        .statusBadge {
+          padding: 4px 8px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 900;
+          text-transform: uppercase;
+        }
+        .statusBadge.open { background: rgba(212,160,23,.2); color: var(--accent2); border: 1px solid rgba(212,160,23,.4); }
+        .statusBadge.accepted { background: rgba(60,180,255,.2); color: #80cfff; border: 1px solid rgba(60,180,255,.4); }
+        .statusBadge.completed { background: rgba(60,255,120,.2); color: #80ffaa; border: 1px solid rgba(60,255,120,.4); }
+        .statusBadge.confirmed { background: rgba(180,60,255,.2); color: #d480ff; border: 1px solid rgba(180,60,255,.4); }
+      `}</style>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+module.exports = require("./JobRoutes");
+
 const router = require("express").Router();
 const mongoose = require("mongoose");
 const Job = require("../Models/Job");
@@ -123,12 +125,6 @@ router.patch("/:jobId/accept", requireAuth, requireRole("provider"), checkProvid
   job.acceptedAt = new Date();
   await job.save();
 
-  // ✅ Increment provider's completed jobs count immediately on acceptance
-  await ProviderProfile.findOneAndUpdate(
-    { userId: job.providerId },
-    { $inc: { completedJobsCount: 1 } }
-  );
-
   res.json({ message: "Job accepted ✅", job });
 });
 
@@ -165,12 +161,18 @@ router.patch("/:jobId/confirm", requireAuth, requireRole("customer"), async (req
 
   job.status = "confirmed";
   job.confirmedAt = new Date();
-  job.finalPrice = price;
+  job.pricing.finalPrice = price;
 
   const pct = job.commission?.percentage ?? 10;
   job.commission.amount = Math.round(price * (pct / 100));
 
   await job.save();
+
+  // ✅ Increment provider's completed jobs count on confirmed completion (not acceptance)
+  await ProviderProfile.findOneAndUpdate(
+    { userId: job.providerId },
+    { $inc: { completedJobsCount: 1 } }
+  );
 
   res.json({ message: "Job confirmed ✅", job });
 });

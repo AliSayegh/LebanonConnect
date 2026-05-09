@@ -6,6 +6,8 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "seed": "node scripts/seed.js",
+    "seed:featured": "node scripts/seedFeatured.js",
+    "sync:jobs": "node scripts/syncJobCounts.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

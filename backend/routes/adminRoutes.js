@@ -4,12 +4,20 @@ const Job = require("../Models/Job");
 const ProviderProfile = require("../Models/ProviderProfile");
 const checkProviderCanAccept = require("../Middleware/checkProviderCanAccept");
 const UserAuth = require("../Models/UserAuth");
+const Strike = require("../Models/Strike");
+const Message = require("../Models/Message");
 
 
 
 router.get("/stats", requireAuth, requireRole("admin"), async (req, res) => {
-  const [jobsTotal, confirmed, revenueAgg, subsAgg] = await Promise.all([
+  const Category = require("../Models/Category");
+
+  const [usersTotal, providersTotal, servicesTotal, jobsTotal, completedJobsTotal, confirmed, revenueAgg, subsAgg] = await Promise.all([
+    UserAuth.countDocuments({ status: "active" }),
+    ProviderProfile.countDocuments({}),
+    Category.countDocuments({ isActive: true }),
     Job.countDocuments({}),
+    Job.countDocuments({ status: { $in: ["completed", "confirmed"] } }),
     Job.countDocuments({ status: "confirmed" }),
     Job.aggregate([
       { $match: { status: "confirmed" } },
@@ -21,7 +29,11 @@ router.get("/stats", requireAuth, requireRole("admin"), async (req, res) => {
   ]);
 
   res.json({
+    totalUsers: usersTotal,
+    totalProviders: providersTotal,
+    totalServices: servicesTotal,
     jobsTotal,
+    completedJobsTotal,
     confirmedJobs: confirmed,
     revenue: revenueAgg[0]?.revenue || 0,
     subscriptions: subsAgg
@@ -32,10 +44,15 @@ router.get("/providers", requireAuth, requireRole("admin"), async (req, res) => 
   const page = Math.max(1, Number(req.query.page || 1));
   const limit = Math.min(50, Math.max(1, Number(req.query.limit || 20)));
   const skip = (page - 1) * limit;
+  const showBanned = req.query.showBanned === "true";
+
+  const query = showBanned 
+    ? { strike: { $gte: 3 } } 
+    : { $or: [{ strike: { $lt: 3 } }, { strike: { $exists: false } }] };
 
   const [total, items] = await Promise.all([
-    ProviderProfile.countDocuments({}),
-    ProviderProfile.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit)
+    ProviderProfile.countDocuments(query),
+    ProviderProfile.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit)
   ]);
 
   res.json({ page, limit, total, pages: Math.ceil(total / limit), items });
@@ -56,7 +73,6 @@ router.delete("/provider/:id", requireAuth, requireRole("admin"), async (req, re
     }
 
     res.json({ message: "Provider and user account deleted successfully" });
-    res.json({ message: "Provider profile deleted successfully" });
   } catch (err) {
     console.error("Delete provider error:", err);
     res.status(500).json({ message: "Server error deleting provider" });
@@ -103,19 +119,59 @@ router.patch("/provider/:id/unverify", requireAuth, requireRole("admin"), async 
 
 router.patch("/provider/:id/strike/add", requireAuth, requireRole("admin"), async (req, res) => {
   try {
+    const { reason } = req.body;
+    if (!reason?.trim()) return res.status(400).json({ message: "Reason is required" });
+
     const updatedProvider = await ProviderProfile.findOneAndUpdate(
-  { userId: req.params.id, strike: { $lt: 3 } },
-  { $inc: { strike: 1 } },
-  {  returnDocument: "after" } // <-- makes sure the returned doc is updated
-);
+      { userId: req.params.id, strike: { $lt: 3 } },
+      { $inc: { strike: 1 } },
+      { returnDocument: "after" }
+    );
 
     if (!updatedProvider) {
       return res.status(404).json({ message: "Provider not found or max strikes reached" });
     }
-     // ✅ Automatically unverify if strike reaches 3
-    if (updatedProvider.strike >= 3 && updatedProvider.isVerified) {
+
+    // Save Strike
+    await Strike.create({
+      providerId: req.params.id,
+      reason,
+      adminId: req.user.id
+    });
+
+    // Support Chat Injection
+    let supportJob = await Job.findOne({
+      customerId: req.user.id,
+      providerId: req.params.id,
+      status: "support"
+    });
+
+    if (!supportJob) {
+      supportJob = await Job.create({
+        customerId: req.user.id,
+        providerId: req.params.id,
+        title: "Admin Support",
+        description: "Official support and moderation channel.",
+        city: updatedProvider.city || "System",
+        status: "support",
+        pricing: { type: "fixed", amount: 0, currency: "USD" },
+      });
+    }
+
+    await Message.create({
+      jobId: supportJob._id,
+      senderId: req.user.id,
+      content: `[SYSTEM: STRIKE ISSUED]\nReason: ${reason}`,
+      isBlocked: false
+    });
+
+    // ✅ Automatically ban if strike reaches 3
+    if (updatedProvider.strike >= 3) {
       updatedProvider.isVerified = false;
+      updatedProvider.isActive = false;
       await updatedProvider.save();
+
+      await UserAuth.findByIdAndUpdate(req.params.id, { status: "suspended" });
     }
 
     res.json(updatedProvider);
@@ -132,11 +188,20 @@ router.patch("/provider/:id/strike/remove", requireAuth, requireRole("admin"), a
     const updatedProvider = await ProviderProfile.findOneAndUpdate(
       { userId: req.params.id, strike: { $gt: 0 } },
       { $inc: { strike: -1 } },
-      { returnDocument: "after" } // <-- updated doc
+      { returnDocument: "after" }
     );
 
     if (!updatedProvider) {
       return res.status(404).json({ message: "Provider not found or no strikes to remove" });
+    }
+
+    // Automatically UNBAN if strike count drops below 3
+    if (updatedProvider.strike < 3) {
+      updatedProvider.isActive = true;
+      // We do not auto-verify, they stay unverified, but they are active again
+      await updatedProvider.save();
+
+      await UserAuth.findByIdAndUpdate(req.params.id, { status: "active" });
     }
 
     res.json(updatedProvider);
@@ -147,5 +212,37 @@ router.patch("/provider/:id/strike/remove", requireAuth, requireRole("admin"), a
 });
 
 
+
+// Start or fetch Support Chat
+router.post("/provider/:id/chat", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const providerId = req.params.id;
+    const provider = await ProviderProfile.findOne({ userId: providerId });
+    if (!provider) return res.status(404).json({ message: "Provider not found" });
+
+    let supportJob = await Job.findOne({
+      customerId: req.user.id,
+      providerId: providerId,
+      status: "support"
+    });
+
+    if (!supportJob) {
+      supportJob = await Job.create({
+        customerId: req.user.id,
+        providerId: providerId,
+        title: "Admin Support",
+        description: "Official support and moderation channel.",
+        city: provider.city || "System",
+        status: "support",
+        pricing: { type: "fixed", amount: 0, currency: "USD" },
+      });
+    }
+
+    res.json({ jobId: supportJob._id });
+  } catch (err) {
+    console.error("Support chat error:", err);
+    res.status(500).json({ message: "Server error creating support chat" });
+  }
+});
 
 module.exports = router;

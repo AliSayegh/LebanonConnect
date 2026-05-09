@@ -8,9 +8,10 @@ const providerProfileSchema = new mongoose.Schema(
     bio: { type: String, default: "", trim: true },
 
     city: { type: String, required: true, trim: true },
+    district: { type: String, default: "", trim: true, index: true },
     addressArea: { type: String, default: "", trim: true },
 
-    pricingType: { type: String, enum: ["fixed", "hourly", "quote"], default: "quote" },
+    pricingType: { type: String, enum: ["fixed", "starting", "hourly", "quote"], default: "quote" },
     basePrice: { type: Number, default: 0 },
 
     isVerified: { type: Boolean, default: false },

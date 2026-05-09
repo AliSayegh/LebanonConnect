@@ -11,8 +11,16 @@ async function requireAuth(req, res, next) {
     
     // Check if user still exists/active
     const user = await UserAuth.findById(decoded.id);
-    if (!user || user.status !== "active") {
-        return res.status(401).json({ message: "User not found or inactive" });
+    if (!user) {
+        return res.status(401).json({ message: "User not found" });
+    }
+    
+    if (user.status === "suspended") {
+        return res.status(403).json({ message: "Your account has been banned" });
+    }
+
+    if (user.status !== "active") {
+        return res.status(401).json({ message: "User is inactive" });
     }
 
     req.user = decoded; // { id, role }

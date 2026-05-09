@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AuthProvider } from "./auth/AuthContent";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import Navbar from "./components/Navbar";
@@ -18,14 +18,27 @@ import Admin from "./pages/Admin";
 import RoleRoute from "./auth/RoleRoute";
 import ProviderSetup from "./pages/ProviderSetup";
 import ServicePage from "./pages/ServicePage";
+import Search from "./pages/Search";
 
 export default function App() {
   const [toast, setToast] = useState({ show: false });
 
-  const notify = (type, title, message) =>
+  const notify = useCallback((type, title, message) => {
     setToast({ show: true, type, title, message });
+  }, []);
 
-  const clear = () => setToast({ show: false });
+  const clear = useCallback(() => {
+    setToast({ show: false });
+  }, []);
+
+  useEffect(() => {
+    if (toast.show) {
+      const timer = setTimeout(() => {
+        setToast({ show: false });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast.show]);
 
   return (
     <AuthProvider>
@@ -87,6 +100,7 @@ export default function App() {
             }
           />
           <Route path="/services/:serviceType" element={<ServicePage notify={notify} />} />
+          <Route path="/search" element={<Search notify={notify} />} />
           <Route path="/provider/setup" element={<ProviderSetup notify={notify} />} />
         </Routes>
         <Footer />

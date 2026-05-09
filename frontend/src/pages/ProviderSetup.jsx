@@ -4,6 +4,8 @@ import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
 import { useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
+import { cities, getAreaByCity } from "../constants/locations";
+import CustomSelect from "../components/CustomSelect";
 
 export default function ProviderSetup({ notify }) {
   const { token, user } = useAuth();
@@ -17,11 +19,14 @@ export default function ProviderSetup({ notify }) {
   const [selected, setSelected] = useState([]);
 
   const [displayName, setDisplayName] = useState("");
-  const [city, setCity] = useState("Beirut");
+  const [city, setCity] = useState("");
+  const [district, setDistrict] = useState("");
   const [addressArea, setAddressArea] = useState("");
   const [bio, setBio] = useState("");
   const [pricingType, setPricingType] = useState("quote");
   const [basePrice, setBasePrice] = useState(0);
+  const [errors, setErrors] = useState({});
+  const BIO_MAX = 500;
 
   useEffect(() => {
     if (!token) nav("/login");
@@ -47,7 +52,8 @@ export default function ProviderSetup({ notify }) {
         const p = me.data.provider;
         if (p) {
           setDisplayName(p.displayName || user?.name || "");
-          setCity(p.city || "Beirut");
+          setCity(p.city || "");
+          setDistrict(p.district || getAreaByCity(p.city || ""));
           setAddressArea(p.addressArea || "");
           setBio(p.bio || "");
           setPricingType(p.pricingType || "quote");
@@ -71,16 +77,31 @@ export default function ProviderSetup({ notify }) {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
+    if (errors.selected) setErrors((p) => ({ ...p, selected: null }));
   };
 
   const save = async () => {
     try {
-      if (selected.length < 1) {
-        return notify?.("error", "Missing category", "Choose at least 1 category.");
+      const nextErrors = {};
+      if (selected.length < 1) nextErrors.selected = "Choose at least 1 category.";
+      if (!displayName.trim()) nextErrors.displayName = "Display name is required.";
+      if (!city.trim()) nextErrors.city = "City is required.";
+      else if (!getAreaByCity(city)) nextErrors.city = "Please select a valid Lebanese city.";
+      if (!addressArea.trim()) nextErrors.addressArea = "Area is required.";
+      if (String(bio || "").length > BIO_MAX) nextErrors.bio = `Bio must be ${BIO_MAX} characters or less.`;
+
+      const priceNum = Number(basePrice);
+      if (pricingType === "fixed" || pricingType === "starting") {
+        if (!Number.isFinite(priceNum) || priceNum < 0) {
+          nextErrors.basePrice = "Price must be a valid number (min 0).";
+        }
       }
-      if (!displayName.trim()) return notify?.("error", "Missing", "Display name is required.");
-      if (!city.trim()) return notify?.("error", "Missing", "City is required.");
-      if (!addressArea.trim()) return notify?.("error", "Missing", "Area is required.");
+
+      setErrors(nextErrors);
+      if (Object.keys(nextErrors).length) {
+        notify?.("error", "Fix the highlighted fields", "Please review the form and try again.");
+        return;
+      }
 
       setSaving(true);
 
@@ -88,10 +109,11 @@ export default function ProviderSetup({ notify }) {
         displayName,
         bio,
         city,
+        district: district || getAreaByCity(city),
         addressArea,
         categoryIds: selected,
         pricingType,
-        basePrice
+        basePrice: pricingType === "quote" ? 0 : priceNum
       });
 
       notify?.("success", "Setup completed", "Your provider profile is now visible.");
@@ -135,44 +157,90 @@ export default function ProviderSetup({ notify }) {
         <div className="setupGrid">
           <div className="setupLeft">
             <label className="label">Display name</label>
-            <input className="input" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+            <input className={errors.displayName ? "input inputErr" : "input"} value={displayName} onChange={(e) => { setDisplayName(e.target.value); if (errors.displayName) setErrors(p => ({ ...p, displayName: null })); }} />
+            {errors.displayName && <div className="fieldErr">{errors.displayName}</div>}
 
             <div className="two">
               <div>
                 <label className="label">City</label>
-                <input className="input" value={city} onChange={(e) => setCity(e.target.value)} />
+                <div className={errors.city ? "inputErrWrap" : ""}>
+                  <CustomSelect
+                    value={city}
+                    onChange={(v) => {
+                      setCity(v);
+                      setDistrict(getAreaByCity(v));
+                      if (errors.city) setErrors(p => ({ ...p, city: null }));
+                    }}
+                    options={cities}
+                    placeholder="Select city…"
+                    ariaLabel="City"
+                  />
+                </div>
+                {errors.city && <div className="fieldErr">{errors.city}</div>}
               </div>
               <div>
-                <label className="label">Area</label>
-                <input className="input" value={addressArea} onChange={(e) => setAddressArea(e.target.value)} />
+                <label className="label">District</label>
+                <input className="input" value={district} disabled placeholder="Auto-filled" />
               </div>
+            </div>
+
+            <div className="two">
+              <div>
+                <label className="label">Area</label>
+                <input className={errors.addressArea ? "input inputErr" : "input"} value={addressArea} onChange={(e) => { setAddressArea(e.target.value); if (errors.addressArea) setErrors(p => ({ ...p, addressArea: null })); }} />
+                {errors.addressArea && <div className="fieldErr">{errors.addressArea}</div>}
+              </div>
+              <div />
             </div>
 
             <label className="label">Bio</label>
             <textarea
-              className="input"
+              className={errors.bio ? "input inputErr" : "input"}
               rows={4}
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell customers why they should trust you..."
+              onChange={(e) => { setBio(e.target.value); if (errors.bio) setErrors(p => ({ ...p, bio: null })); }}
+              placeholder="Briefly describe your experience, specialties, and what customers can expect (response time, warranty, tools, etc.)."
             />
+            {errors.bio && <div className="fieldErr">{errors.bio}</div>}
+            <div className="muted tiny" style={{ marginTop: 6 }}>
+              {String(bio || "").length}/{BIO_MAX}
+            </div>
 
             <div className="two">
               <div>
                 <label className="label">Pricing type</label>
-                <select className="input" value={pricingType} onChange={(e) => setPricingType(e.target.value)}>
-                  <option value="quote">Quote</option>
-                  <option value="fixed">Fixed</option>
-                </select>
+                <CustomSelect
+                  value={pricingType}
+                  onChange={(v) => setPricingType(v)}
+                  options={[
+                    { value: "fixed", label: "Fixed price" },
+                    { value: "starting", label: "Starting from" },
+                    { value: "quote", label: "Quote based" },
+                  ]}
+                  placeholder="Select pricing…"
+                  ariaLabel="Pricing type"
+                />
               </div>
               <div>
-                <label className="label">Base price</label>
-                <input
-                  className="input"
-                  type="number"
-                  value={basePrice}
-                  onChange={(e) => setBasePrice(e.target.value)}
-                />
+                {pricingType === "quote" ? (
+                  <div className="priceHint">
+                    <label className="label">Price</label>
+                    <div className="muted small">No price shown (customers request a quote).</div>
+                  </div>
+                ) : (
+                  <>
+                    <label className="label">{pricingType === "starting" ? "Starting from" : "Fixed price"}</label>
+                    <input
+                      className={errors.basePrice ? "input inputErr" : "input"}
+                      type="number"
+                      min={0}
+                      value={basePrice}
+                      onChange={(e) => { setBasePrice(e.target.value); if (errors.basePrice) setErrors(p => ({ ...p, basePrice: null })); }}
+                      placeholder="0"
+                    />
+                    {errors.basePrice && <div className="fieldErr">{errors.basePrice}</div>}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -181,6 +249,7 @@ export default function ProviderSetup({ notify }) {
             <div className="setupBox">
               <div className="setupBoxTitle">Choose your categories</div>
               <div className="muted small">Pick at least 1. More = more jobs.</div>
+              {errors.selected && <div className="fieldErr">{errors.selected}</div>}
 
               <div className="cats">
                 {categories.map((c) => {
@@ -218,23 +287,27 @@ export default function ProviderSetup({ notify }) {
       </motion.div>
 
       <style>{`
-        .setupCard{ padding: 18px !important; border-radius: 22px; }
-        .setupTop{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom: 14px; }
+        .setupCard{ padding: 24px !important; border-radius: 22px; }
+        .setupTop{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom: 24px; }
         .pill.warn{ border-color: rgba(255,200,80,.55); background: rgba(255,200,80,.10); color: var(--accent2); }
 
-        .setupGrid{ display:grid; grid-template-columns: 1.15fr .85fr; gap: 14px; }
+        .fieldErr{ margin-top: 6px; font-size: 12px; font-weight: 700; color: rgba(255,120,120,.95); }
+        .inputErr{ border-color: rgba(255,120,120,.55) !important; box-shadow: 0 0 0 3px rgba(255,120,120,.10) !important; }
+        .inputErrWrap .csSelect{ border-color: rgba(255,120,120,.55) !important; box-shadow: 0 0 0 3px rgba(255,120,120,.10) !important; }
+
+        .setupGrid{ display:grid; grid-template-columns: 1.15fr .85fr; gap: 24px; }
         @media(max-width: 980px){ .setupGrid{ grid-template-columns: 1fr; } }
 
-        .setupLeft{ padding: 14px; border-radius: 18px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.12); }
-        .setupRight{ display:flex; flex-direction:column; gap: 12px; }
+        .setupLeft{ padding: 20px; border-radius: 18px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.12); }
+        .setupRight{ display:flex; flex-direction:column; gap: 24px; }
 
-        .two{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .two{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media(max-width: 640px){ .two{ grid-template-columns: 1fr; } }
 
         .label{ display:block; font-size: 12px; font-weight: 800; margin: 10px 0 6px; color: rgba(255,255,255,.82); }
         .input{ width: 100%; }
 
-        .setupBox{ padding: 14px; border-radius: 18px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.12); }
+        .setupBox{ padding: 20px; border-radius: 18px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.12); }
         .setupBoxTitle{ font-weight: 900; }
 
         .cats{ display:flex; flex-wrap:wrap; gap: 8px; margin-top: 10px; }
@@ -258,6 +331,7 @@ export default function ProviderSetup({ notify }) {
         .setupHint{ margin-top: 12px; display:flex; gap: 8px; align-items:center; }
         .setupActions{ display:flex; gap: 10px; }
         .btn.sm{ height: 36px; padding: 0 12px; border-radius: 12px; font-size: 13px; }
+        .priceHint{ display:flex; flex-direction:column; gap: 4px; }
       `}</style>
     </div>
   );

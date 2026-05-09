@@ -5,7 +5,7 @@ const jobSchema = new mongoose.Schema(
     customerId: { type: mongoose.Schema.Types.ObjectId, ref: "UserAuth", required: true, index: true },
     providerId: { type: mongoose.Schema.Types.ObjectId, ref: "UserAuth", required: true, index: true },
 
-    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true, index: true },
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category", index: true },
 
     title: { type: String, required: true, trim: true },
     description: { type: String, default: "", trim: true },
@@ -15,7 +15,7 @@ const jobSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["open", "accepted", "in_progress", "completed","confirmed", "cancelled"],
+      enum: ["open", "accepted", "in_progress", "completed","confirmed", "cancelled", "support"],
       default: "open",
       index: true
     },

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
@@ -9,7 +9,15 @@ export default function Login({ notify }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (window.location.search.includes("banned=true")) {
+      notify?.("error", "Access Denied", "Your account has been banned.");
+      window.history.replaceState({}, document.title, "/login");
+    }
+  }, [notify]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -65,12 +73,22 @@ export default function Login({ notify }) {
           <label className="label">Password</label>
           <input
             className="input"
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             autoComplete="current-password"
           />
+
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, marginBottom: 16 }}>
+            <input
+              type="checkbox"
+              checked={showPassword}
+              onChange={(e) => setShowPassword(e.target.checked)}
+              style={{ accentColor: "var(--accent2)" }}
+            />
+            <span className="muted small">Show password</span>
+          </label>
 
           <button className="btn primary full" disabled={busy}>
             {busy ? "Signing in..." : "Sign in"}

@@ -12,7 +12,8 @@ const providerRoutes = require("./routes/providerRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 
 const app = express();
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+const ALLOWED_ORIGINS = ["http://localhost:5173", "http://localhost:5174"];
+app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
 app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
@@ -40,7 +41,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
     credentials: true,
   },

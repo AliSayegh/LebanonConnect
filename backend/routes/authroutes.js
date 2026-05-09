@@ -5,6 +5,9 @@ const jwt = require("jsonwebtoken");
 const UserAuth = require("../Models/UserAuth");
 const CustomerProfile = require("../Models/CustomerProfile");
 const ProviderProfile = require("../Models/ProviderProfile");
+const { isValidLebanonCity } = require("../utils/lebanonCities");
+const { validateStrongPassword, validateEmail } = require("../utils/validation");
+const { getDistrictByCity } = require("../utils/locations");
 
 // REGISTER (same page with role selection)
 router.post("/register", async (req, res) => {
@@ -12,7 +15,13 @@ router.post("/register", async (req, res) => {
     const { email, password, role, fullName, displayName, city } = req.body;
 
     if (!email || !password) return res.status(400).json({ message: "Missing email/password" });
-    if (password.length < 8) return res.status(400).json({ message: "Password must be at least 8 chars" });
+    const emailErr = validateEmail(email);
+    if (emailErr) return res.status(400).json({ message: emailErr });
+    const pwErr = validateStrongPassword(password);
+    if (pwErr) return res.status(400).json({ message: pwErr });
+    if (!isValidLebanonCity(city)) {
+      return res.status(400).json({ message: "City is required (select a valid Lebanese city)." });
+    }
 
     const finalRole = ["customer", "provider"].includes(role) ? role : "customer";
 
@@ -29,17 +38,20 @@ router.post("/register", async (req, res) => {
     });
 
     // Create profile based on role
+    const district = getDistrictByCity(city);
     if (finalRole === "customer") {
       await CustomerProfile.create({
         userId: user._id,
         fullName: fullName || "Customer",
-        city: city || ""
+        city: city.trim(),
+        district
       });
     } else {
       await ProviderProfile.create({
         userId: user._id,
         displayName: displayName || "Provider",
-        city: city || "Lebanon",
+        city: city.trim(),
+        district,
         categoryIds: [],
         isVerified: false,
         isActive: true
@@ -57,8 +69,16 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await UserAuth.findOne({ email: email.toLowerCase().trim(), status: "active" });
+    const user = await UserAuth.findOne({ email: email.toLowerCase().trim() });
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
+
+    if (user.status === "suspended") {
+      return res.status(403).json({ message: "Your account has been banned." });
+    }
+    
+    if (user.status !== "active") {
+      return res.status(401).json({ message: "Account is inactive" });
+    }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });

@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
 import Loader from "../components/Loader";
+import { cities } from "../constants/locations";
+import CustomSelect from "../components/CustomSelect";
 
 export default function CreateJob({ notify }) {
   const { token, user } = useAuth();
@@ -131,10 +133,12 @@ export default function CreateJob({ notify }) {
             <div className="grid2">
               <div>
                 <label className="label">City</label>
-                <input
-                  className="input"
+                <CustomSelect
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(v) => setCity(v)}
+                  options={cities}
+                  placeholder="Select city…"
+                  ariaLabel="City"
                 />
               </div>
               <div>
