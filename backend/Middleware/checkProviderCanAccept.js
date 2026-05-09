@@ -17,6 +17,10 @@ module.exports = async function checkProviderCanAccept(req, res, next) {
   const plan = profile.subscription?.plan || "free";
   const expiresAt = profile.subscription?.expiresAt;
 
+  if (!profile.isVerified) {
+    return res.status(403).json({ message: "You must be verified by admin to accept jobs" });
+  }
+
   // basic/pro must be active (not expired)
   if (plan !== "free") {
     if (!expiresAt || expiresAt < new Date()) {

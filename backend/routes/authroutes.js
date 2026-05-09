@@ -69,8 +69,16 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await UserAuth.findOne({ email: email.toLowerCase().trim(), status: "active" });
+    const user = await UserAuth.findOne({ email: email.toLowerCase().trim() });
     if (!user) return res.status(401).json({ message: "Invalid credentials" });
+
+    if (user.status === "suspended") {
+      return res.status(403).json({ message: "Your account has been banned." });
+    }
+    
+    if (user.status !== "active") {
+      return res.status(401).json({ message: "Account is inactive" });
+    }
 
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });

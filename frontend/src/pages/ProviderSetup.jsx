@@ -287,27 +287,27 @@ export default function ProviderSetup({ notify }) {
       </motion.div>
 
       <style>{`
-        .setupCard{ padding: 18px !important; border-radius: 22px; }
-        .setupTop{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom: 14px; }
+        .setupCard{ padding: 24px !important; border-radius: 22px; }
+        .setupTop{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom: 24px; }
         .pill.warn{ border-color: rgba(255,200,80,.55); background: rgba(255,200,80,.10); color: var(--accent2); }
 
         .fieldErr{ margin-top: 6px; font-size: 12px; font-weight: 700; color: rgba(255,120,120,.95); }
         .inputErr{ border-color: rgba(255,120,120,.55) !important; box-shadow: 0 0 0 3px rgba(255,120,120,.10) !important; }
         .inputErrWrap .csSelect{ border-color: rgba(255,120,120,.55) !important; box-shadow: 0 0 0 3px rgba(255,120,120,.10) !important; }
 
-        .setupGrid{ display:grid; grid-template-columns: 1.15fr .85fr; gap: 14px; }
+        .setupGrid{ display:grid; grid-template-columns: 1.15fr .85fr; gap: 24px; }
         @media(max-width: 980px){ .setupGrid{ grid-template-columns: 1fr; } }
 
-        .setupLeft{ padding: 14px; border-radius: 18px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.12); }
-        .setupRight{ display:flex; flex-direction:column; gap: 12px; }
+        .setupLeft{ padding: 20px; border-radius: 18px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.12); }
+        .setupRight{ display:flex; flex-direction:column; gap: 24px; }
 
-        .two{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .two{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media(max-width: 640px){ .two{ grid-template-columns: 1fr; } }
 
         .label{ display:block; font-size: 12px; font-weight: 800; margin: 10px 0 6px; color: rgba(255,255,255,.82); }
         .input{ width: 100%; }
 
-        .setupBox{ padding: 14px; border-radius: 18px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.12); }
+        .setupBox{ padding: 20px; border-radius: 18px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.12); }
         .setupBoxTitle{ font-weight: 900; }
 
         .cats{ display:flex; flex-wrap:wrap; gap: 8px; margin-top: 10px; }

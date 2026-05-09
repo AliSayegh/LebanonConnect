@@ -55,6 +55,10 @@ export default function Dashboard({ notify }) {
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState([]);
 
+  const [providerProfile, setProviderProfile] = useState(null);
+  const [strikePopupOpen, setStrikePopupOpen] = useState(false);
+  const [latestStrikeReason, setLatestStrikeReason] = useState("");
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmJob, setConfirmJob] = useState(null);
   const [finalPrice, setFinalPrice] = useState("");
@@ -86,9 +90,29 @@ export default function Dashboard({ notify }) {
     }
   }, [client, notify]);
 
+  const loadProviderData = useCallback(async () => {
+    if (user?.role !== "provider") return;
+    try {
+      const [profileRes, strikesRes] = await Promise.all([
+        client.get("/api/providers/me"),
+        client.get("/api/providers/me/strikes")
+      ]);
+      setProviderProfile(profileRes.data.provider);
+      
+      const unread = strikesRes.data.strikes;
+      if (unread && unread.length > 0) {
+        setLatestStrikeReason(unread[unread.length - 1].reason);
+        setStrikePopupOpen(true);
+      }
+    } catch (e) {
+      console.error("Provider data load error", e);
+    }
+  }, [client, user]);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadProviderData();
+  }, [load, loadProviderData]);
 
   const acceptJob = async (jobId) => {
     try {
@@ -320,12 +344,21 @@ export default function Dashboard({ notify }) {
                 )}
 
                 {user?.role === "provider" && status === "open" && (
-                  <button
-                    className="btn primary"
-                    onClick={() => acceptJob(job._id)}
-                  >
-                    Accept
-                  </button>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+                    <button
+                      className="btn primary"
+                      disabled={!providerProfile?.isVerified}
+                      onClick={() => acceptJob(job._id)}
+                      style={{ width: "100%" }}
+                    >
+                      Accept
+                    </button>
+                    {!providerProfile?.isVerified && (
+                      <span className="muted tiny" style={{ textAlign: "center", color: "var(--accent2)" }}>
+                        You must be verified by admin to accept jobs.
+                      </span>
+                    )}
+                  </div>
                 )}
 
                 {user?.role === "provider" && status === "accepted" && (
@@ -491,6 +524,22 @@ export default function Dashboard({ notify }) {
   </div>
 </div>
 </Modal>
+      {/* Strike Modal */}
+      <Modal open={strikePopupOpen} title="⚠️ Strike Received" onClose={() => setStrikePopupOpen(false)}>
+        <div className="modalBody">
+          <p className="muted" style={{ marginBottom: 16 }}>
+            You have received a strike from an administrator. 
+            Accumulating 3 strikes will result in a permanent ban.
+          </p>
+          <div style={{ padding: 16, background: "rgba(255,80,80,0.1)", border: "1px solid rgba(255,80,80,0.3)", borderRadius: 12 }}>
+            <span style={{ color: "#ff8080", fontWeight: "bold" }}>Reason: </span>
+            <span>{latestStrikeReason}</span>
+          </div>
+          <div className="rowEnd" style={{ marginTop: 24 }}>
+            <button className="btn primary" onClick={() => setStrikePopupOpen(false)}>I Understand</button>
+          </div>
+        </div>
+      </Modal>
 
       <style>{`
         .gridJobs {

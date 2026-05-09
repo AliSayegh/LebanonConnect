@@ -1,9 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
 import Loader from "../components/Loader";
+
+function Modal({ open, title, children, onClose }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div className="modalOverlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+          <motion.div className="modalCard" initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modalHead">
+              <h3 className="h3">{title}</h3>
+              <button className="btn ghost" style={{ padding: "0 8px" }} onClick={onClose}>✕</button>
+            </div>
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 function Stars({ value = 0 }) {
   const v = Math.max(0, Math.min(5, Number(value || 0)));
@@ -58,6 +76,11 @@ export default function ProviderProfile({ notify }) {
   const [revPage, setRevPage] = useState(1);
   const [revPages, setRevPages] = useState(1);
 
+  // Strike modal state
+  const [strikeOpen, setStrikeOpen] = useState(false);
+  const [strikeReason, setStrikeReason] = useState("");
+  const [strikeLoading, setStrikeLoading] = useState(false);
+
   // Fetch provider info (robust: tries with city, then without)
   useEffect(() => {
     let alive = true;
@@ -66,15 +89,8 @@ export default function ProviderProfile({ notify }) {
       try {
         setLoading(true);
 
-        // 1) Try with a common city filter (fast)
-        let res = await client.get(`/api/providers/search?city=Beirut&limit=200&page=1`);
-        let found = (res.data.items || []).find((x) => String(x.userId) === String(userId));
-
-        // 2) If not found, retry without city filter (you must support it OR ignore city on backend)
-        if (!found) {
-          res = await client.get(`/api/providers/search?limit=300&page=1`);
-          found = (res.data.items || []).find((x) => String(x.userId) === String(userId));
-        }
+        const res = await client.get(`/api/providers/${userId}`);
+        const found = res.data;
 
         if (!found) {
           throw new Error("Provider not found.");
@@ -198,23 +214,25 @@ const handleUnverify = async () => {
   }
 };
 
-const handleAddStrike = async () => {
+const openStrikeModal = () => {
   if (!p) return;
-  const currentStrike = Number(p.strike || 0);
-  if (currentStrike >= 3) return;
+  if (Number(p.strike || 0) >= 3) return notify?.("info", "Max Strikes", "Provider already has max strikes.");
+  setStrikeReason("");
+  setStrikeOpen(true);
+};
 
-  // Optimistic UI update
-  setP(prev => ({ ...prev, strike: currentStrike + 1 }));
-
+const submitStrike = async () => {
+  if (!strikeReason.trim()) return notify?.("error", "Error", "Reason is required");
   try {
-    const res = await client.patch(`/api/admin/provider/${userId}/strike/add`);
-    const updatedStrike = Number(res.data.strike ?? currentStrike + 1);
-    setP(prev => ({ ...prev, ...res.data, strike: updatedStrike }));
-    notify?.("success", "Strike added");
-  } catch {
-    // rollback
-    setP(prev => ({ ...prev, strike: currentStrike }));
-    notify?.("error", "Error", "Cannot add strike");
+    setStrikeLoading(true);
+    const res = await client.patch(`/api/admin/provider/${userId}/strike/add`, { reason: strikeReason });
+    setP(prev => ({ ...prev, ...res.data }));
+    notify?.("success", "Strike Issued", "Provider has been given a strike.");
+    setStrikeOpen(false);
+  } catch (e) {
+    notify?.("error", "Error", e?.response?.data?.message || "Failed to issue strike");
+  } finally {
+    setStrikeLoading(false);
   }
 };
 
@@ -270,7 +288,7 @@ function Strikes({ count = 0, max = 3 }) {
      <button
   className="btn warning"
   disabled={p.strike >= 3}
-  onClick={handleAddStrike}
+  onClick={openStrikeModal}
 >
   + Add Strike
 </button>
@@ -404,12 +422,35 @@ function Strikes({ count = 0, max = 3 }) {
         </div>
       </motion.div>
 
+      {/* Strike Modal */}
+      <Modal open={strikeOpen} title="Issue a Strike" onClose={() => setStrikeOpen(false)}>
+        <div style={{ padding: 24 }}>
+          <p className="muted" style={{ marginBottom: 16 }}>
+            Strikes warn the provider about community guidelines violations. 3 strikes result in an automatic, permanent ban.
+          </p>
+          <label className="label">Reason for strike *</label>
+          <textarea
+            className="input"
+            rows={4}
+            value={strikeReason}
+            onChange={(e) => setStrikeReason(e.target.value)}
+            placeholder="Describe the violation..."
+          />
+          <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
+            <button className="btn ghost" onClick={() => setStrikeOpen(false)}>Cancel</button>
+            <button className="btn primary" onClick={submitStrike} disabled={strikeLoading}>
+              {strikeLoading ? "Issuing..." : "Submit Strike"}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Local styles */}
       <style>{`
-        .profileCard{ padding: 18px !important; border-radius: 22px; }
+        .profileCard{ padding: 24px !important; border-radius: 22px; }
         .ppReviewsSection{
-          margin-top: 18px;
-          padding-top: 16px;
+          margin-top: 24px;
+          padding-top: 20px;
           border-top: 1px solid rgba(255,255,255,.10);
         }
         .ppReviewsHead{

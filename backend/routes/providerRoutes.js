@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const ProviderProfile = require("../Models/ProviderProfile");
 const Category = require("../Models/Category");
 const { requireAuth, requireRole } = require("../Middleware/auth");
+const Strike = require("../Models/Strike");
 const { isValidLebanonCity } = require("../utils/lebanonCities");
 const { getDistrictByCity } = require("../utils/locations");
 
@@ -157,6 +158,25 @@ router.get("/me", requireAuth, requireRole("provider"), async (req, res) => {
   res.json({ provider: p || null });
 });
 
+// ✅ Get unread strikes
+router.get("/me/strikes", requireAuth, requireRole("provider"), async (req, res) => {
+  try {
+    const strikes = await Strike.find({ providerId: req.user.id, isRead: false });
+    
+    if (strikes.length > 0) {
+      await Strike.updateMany(
+        { _id: { $in: strikes.map(s => s._id) } },
+        { $set: { isRead: true } }
+      );
+    }
+    
+    res.json({ strikes });
+  } catch (err) {
+    console.error("Fetch strikes error:", err);
+    res.status(500).json({ message: "Server error fetching strikes" });
+  }
+});
+
 // ✅ Update/complete my provider profile
 router.patch("/me", requireAuth, requireRole("provider"), async (req, res) => {
   try {
@@ -226,6 +246,20 @@ router.patch("/me", requireAuth, requireRole("provider"), async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ✅ Get provider profile by ID (Public/Admin)
+router.get("/:id", async (req, res) => {
+  try {
+    const p = await ProviderProfile.findOne({ userId: req.params.id }).lean();
+    if (!p) {
+      return res.status(404).json({ message: "Provider not found" });
+    }
+    res.json(p);
+  } catch (err) {
+    console.error("Fetch provider by ID error:", err);
+    res.status(500).json({ message: "Server error fetching provider" });
   }
 });
 
