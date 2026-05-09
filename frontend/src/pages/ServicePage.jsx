@@ -3,8 +3,9 @@ import { useParams } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth/useAuth";
 import ProviderGrid from "../components/ProviderGrid";
+import { LEBANON_CITIES } from "../constants/lebanonCities";
 
-const cities = ["Beirut", "Mount Lebanon", "Tripoli", "Saida", "Tyre", "Zahle"];
+const cities = LEBANON_CITIES;
 
 export default function ServicePage({ notify }) {
   const { serviceType } = useParams();
