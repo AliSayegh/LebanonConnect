@@ -64,12 +64,16 @@ export default function Admin({ notify }) {
       <motion.div className="pageHead" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
         <div>
           <h1 className="h1">Admin Dashboard</h1>
-          <p className="muted">Revenue, jobs, subscriptions, providers.</p>
+          <p className="muted">Platform health, activity, and provider management.</p>
         </div>
         <button className="btn ghost" onClick={load}>{loading ? "Refreshing…" : "Refresh"}</button>
       </motion.div>
 
       <div className="gridStats">
+        <StatCard label="Total users" value={stats?.totalUsers ?? "—"} />
+        <StatCard label="Total providers" value={stats?.totalProviders ?? "—"} />
+        <StatCard label="Total services" value={stats?.totalServices ?? "—"} />
+        <StatCard label="Completed jobs" value={stats?.completedJobsTotal ?? "—"} />
         <StatCard label="Total jobs" value={stats?.jobsTotal ?? "—"} />
         <StatCard label="Confirmed jobs" value={stats?.confirmedJobs ?? "—"} />
         <StatCard label="Revenue (commission)" value={`${(stats?.revenue ?? 0).toLocaleString()} LBP`} />
@@ -109,6 +113,19 @@ export default function Admin({ notify }) {
           ))}
         </div>
       </motion.div>
+
+      <style>{`
+        .gridStats{
+          display:grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+        @media(max-width: 980px){ .gridStats{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media(max-width: 520px){ .gridStats{ grid-template-columns: 1fr; } }
+        .statCard{ padding: 14px !important; border-radius: 18px; }
+        .statValue{ font-size: 28px; font-weight: 900; margin-top: 6px; }
+      `}</style>
     </div>
   );
 }
