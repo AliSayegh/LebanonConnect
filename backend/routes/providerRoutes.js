@@ -259,7 +259,7 @@ router.patch("/me", requireAuth, requireRole("provider"), async (req, res) => {
 // ✅ Get provider profile by ID (Public/Admin)
 router.get("/:id", async (req, res) => {
   try {
-    const p = await ProviderProfile.findOne({ userId: req.params.id }).lean();
+    const p = await ProviderProfile.findOne({ userId: req.params.id, deleted: { $ne: true } }).lean();
     if (!p) {
       return res.status(404).json({ message: "Provider not found" });
     }
