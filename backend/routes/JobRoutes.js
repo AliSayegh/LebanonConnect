@@ -54,6 +54,12 @@ router.post("/", requireAuth, requireRole("customer"), async (req, res) => {
     if (!providerExists || providerExists.role !== "provider") {
         return res.status(404).json({ message: "Provider not found" });
     }
+    if (providerExists.deleted) {
+        return res.status(400).json({ message: "This provider has been removed" });
+    }
+    if (providerExists.status === "suspended") {
+        return res.status(400).json({ message: "This provider has been banned" });
+    }
 
     const categoryExists = await mongoose.model("Category").findById(categoryId);
     if (!categoryExists) {
