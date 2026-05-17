@@ -237,7 +237,7 @@ export default function Dashboard({ notify }) {
   const empty = !loading && jobs.length === 0;
 
   return (
-    <div className="page">
+    <div className="page" style={{ alignItems: 'flex-start', padding: '28px 24px' }}>
       <motion.div
         className="pageHead"
         initial={{ opacity: 0, y: 8 }}
@@ -272,10 +272,13 @@ export default function Dashboard({ notify }) {
         )}
 
         {empty && (
-          <div className="card">
-            <h3>No jobs yet</h3>
-            <p className="muted">
-              Create a job request or wait for customers to request you.
+          <div className="card" style={{ padding: 32, textAlign: 'center', gridColumn: '1 / -1' }}>
+            <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.6 }}>📋</div>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: 20 }}>No data available</h3>
+            <p className="muted" style={{ maxWidth: 360, margin: '0 auto' }}>
+              {user?.role === 'customer'
+                ? 'You haven\'t requested any jobs yet. Click "Request Job" to get started.'
+                : 'No job requests have been received yet. They will appear here once a customer sends one.'}
             </p>
           </div>
         )}
