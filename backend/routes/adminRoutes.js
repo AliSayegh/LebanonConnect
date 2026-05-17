@@ -13,7 +13,7 @@ router.get("/stats", requireAuth, requireRole("admin"), async (req, res) => {
   const Category = require("../Models/Category");
 
   const [usersTotal, providersTotal, servicesTotal, jobsTotal, completedJobsTotal, confirmed, revenueAgg, subsAgg] = await Promise.all([
-    UserAuth.countDocuments({ status: "active" }),
+    UserAuth.countDocuments({ status: "active", deleted: { $ne: true } }),
     ProviderProfile.countDocuments({}),
     Category.countDocuments({ isActive: true }),
     Job.countDocuments({}),
@@ -47,8 +47,8 @@ router.get("/providers", requireAuth, requireRole("admin"), async (req, res) => 
   const showBanned = req.query.showBanned === "true";
 
   const query = showBanned 
-    ? { strike: { $gte: 3 } } 
-    : { $or: [{ strike: { $lt: 3 } }, { strike: { $exists: false } }] };
+    ? { strike: { $gte: 3 }, deleted: { $ne: true } } 
+    : { $or: [{ strike: { $lt: 3 } }, { strike: { $exists: false } }], deleted: { $ne: true } };
 
   const [total, items] = await Promise.all([
     ProviderProfile.countDocuments(query),
@@ -65,16 +65,22 @@ router.delete("/provider/:id", requireAuth, requireRole("admin"), async (req, re
     const provider = await ProviderProfile.findOne({ userId: req.params.id });
     if (!provider) return res.status(404).json({ message: "Provider not found" });
 
-    await provider.deleteOne(); // safer than remove()
+    // Soft delete: mark as inactive instead of removing from DB
+    provider.isActive = false;
+    provider.isVerified = false;
+    provider.deleted = true;
+    await provider.save();
 
     const user = await UserAuth.findById(req.params.id);
     if (user) {
-      await user.deleteOne();
+      user.deleted = true;
+      user.status = "deleted";
+      await user.save();
     }
 
-    res.json({ message: "Provider and user account deleted successfully" });
+    res.json({ message: "Provider and user account soft-deleted successfully" });
   } catch (err) {
-    console.error("Delete provider error:", err);
+    console.error("Soft delete provider error:", err);
     res.status(500).json({ message: "Server error deleting provider" });
   }
 });

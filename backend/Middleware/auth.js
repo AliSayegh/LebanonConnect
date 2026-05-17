@@ -14,6 +14,10 @@ async function requireAuth(req, res, next) {
     if (!user) {
         return res.status(401).json({ message: "User not found" });
     }
+
+    if (user.deleted) {
+        return res.status(403).json({ message: "This account has been deleted" });
+    }
     
     if (user.status === "suspended") {
         return res.status(403).json({ message: "Your account has been banned" });
