@@ -8,6 +8,8 @@ const userAuthSchema = new mongoose.Schema(
     role: { type: String, enum: ["customer", "provider", "admin"], required: true, default: "customer" },
     status: { type: String, enum: ["active", "suspended", "deleted"], default: "active" },
 
+    deleted: { type: Boolean, default: false },
+
     lastLoginAt: { type: Date, default: null }
   },
   { timestamps: true }

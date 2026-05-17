@@ -120,7 +120,7 @@ export default function Chat({ notify }) {
         <div>
           <div className="chatTitle">Secure Job Chat</div>
           <div className="chatSub">
-            Room: <span className="mono">{jobId}</span> • {status}
+            {status}
           </div>
         </div>
         <div className="pill">{user?.role}</div>

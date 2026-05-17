@@ -30,20 +30,42 @@ export default function CreateJob({ notify }) {
     (async () => {
       try {
         setLoading(true);
+        // Fetch ALL valid providers (no city filter) for the dropdown
         const res = await client.get(
-          `/api/providers/search?city=${encodeURIComponent(city)}&limit=50&page=1`,
+          `/api/providers/search?limit=50&page=1`,
         );
-        setProviders(res.data.items);
+        let allProviders = res.data.items || [];
 
-        const defaultProvider =
-          presetProviderId || res.data.items?.[0]?.userId || "";
+        // If presetProviderId exists, ensure that provider is in the list
+        if (presetProviderId) {
+          const alreadyInList = allProviders.some(
+            (x) => String(x.userId) === String(presetProviderId),
+          );
+          if (!alreadyInList) {
+            try {
+              const single = await client.get(`/api/providers/${presetProviderId}`);
+              if (single.data && single.data.userId) {
+                allProviders = [single.data, ...allProviders];
+              }
+            } catch {
+              // Provider may not exist or be deleted/banned, ignore
+            }
+          }
+        }
+
+        setProviders(allProviders);
+
+        // Auto-select preset provider, or leave empty for user to choose
+        const defaultProvider = presetProviderId || "";
         setProviderId(defaultProvider);
 
-        // Auto set categoryId from provider first category (important!)
-        const selected = res.data.items.find(
-          (x) => String(x.userId) === String(defaultProvider),
-        );
-        setCategoryId(selected?.categoryIds?.[0] || "");
+        // Auto set categoryId from provider first category
+        if (defaultProvider) {
+          const selected = allProviders.find(
+            (x) => String(x.userId) === String(defaultProvider),
+          );
+          setCategoryId(selected?.categoryIds?.[0] || "");
+        }
       } catch (e) {
         notify(
           "error",
@@ -54,7 +76,7 @@ export default function CreateJob({ notify }) {
         setLoading(false);
       }
     })();
-  }, [city, client, user, notify, presetProviderId]);
+  }, [client, user, notify, presetProviderId]);
 
   useEffect(() => {
     const selected = providers.find(
@@ -121,7 +143,7 @@ export default function CreateJob({ notify }) {
         <div className="topRow">
           <div>
             <h1 className="h1">Request a job</h1>
-            <p className="muted">You’ll chat securely inside the platform.</p>
+            <p className="muted">You'll chat securely inside the platform.</p>
           </div>
           <div className="pill">No phone numbers</div>
         </div>
@@ -158,6 +180,7 @@ export default function CreateJob({ notify }) {
               value={providerId}
               onChange={(e) => setProviderId(e.target.value)}
             >
+              <option value="">— Select a provider —</option>
               {providers.map((p) => (
                 <option key={p.userId} value={p.userId}>
                   {p.displayName} {p.isVerified ? "✓" : ""} — ⭐

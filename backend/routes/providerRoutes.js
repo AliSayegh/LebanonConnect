@@ -54,9 +54,10 @@ router.get("/search", async (req, res) => {
       if (catIds.length) q.$or.push({ categoryIds: { $in: catIds } });
     }
 
-    // ✅ Handle serviceSlug if provided
+    // ✅ Handle serviceSlug if provided (case-insensitive matching)
     if (serviceSlug) {
-      const cat = await Category.findOne({ slug: serviceSlug, isActive: true });
+      const slugRegex = new RegExp(`^${serviceSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+      const cat = await Category.findOne({ slug: slugRegex, isActive: true });
       if (cat) {
         q.categoryIds = { $in: [cat._id] };
       } else {
@@ -77,6 +78,10 @@ router.get("/search", async (req, res) => {
 
     // ✅ IMPORTANT: show only completed providers
     q.onboardingComplete = true;
+
+    // ✅ Exclude banned and deleted providers
+    q.strike = { $lt: 3 };
+    q.deleted = { $ne: true };
 
     // Only set default category query if not already filtering by slug/id
     if (!q.categoryIds) {
@@ -138,6 +143,8 @@ router.get("/featured", async (req, res) => {
     const featured = await ProviderProfile.find({
       isActive: true,
       onboardingComplete: true,
+      deleted: { $ne: true },
+      strike: { $lt: 3 },
     })
       .sort({ ratingAvg: -1, ratingCount: -1, completedJobsCount: -1 })
       .limit(6)
@@ -252,7 +259,7 @@ router.patch("/me", requireAuth, requireRole("provider"), async (req, res) => {
 // ✅ Get provider profile by ID (Public/Admin)
 router.get("/:id", async (req, res) => {
   try {
-    const p = await ProviderProfile.findOne({ userId: req.params.id }).lean();
+    const p = await ProviderProfile.findOne({ userId: req.params.id, deleted: { $ne: true } }).lean();
     if (!p) {
       return res.status(404).json({ message: "Provider not found" });
     }

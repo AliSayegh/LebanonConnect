@@ -29,6 +29,7 @@ const providerProfileSchema = new mongoose.Schema(
     onboardingComplete: { type: Boolean, default: false, index: true },
     categoryIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category", index: true }],
     strike: {type: Number, default: 0 , max: 3, min: 0} ,
+    deleted: { type: Boolean, default: false },
 
 
   },

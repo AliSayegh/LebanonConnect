@@ -114,7 +114,7 @@ export default function Admin({ notify }) {
   }, {});
 
   return (
-    <div className="page">
+    <div className="page" style={{ alignItems: 'flex-start', padding: '28px 24px' }}>
       <motion.div className="pageHead" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
         <div>
           <h1 className="h1">Admin Dashboard</h1>
@@ -160,6 +160,14 @@ export default function Admin({ notify }) {
             <div>Rating</div>
             <div>Actions</div>
           </div>
+
+          {providers.length === 0 && (
+            <div style={{ padding: 32, textAlign: 'center' }}>
+              <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.6 }}>📊</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: 18 }}>No data available</h3>
+              <p className="muted">No providers found{showBanned ? ' with bans' : ''}. They will appear here once providers register.</p>
+            </div>
+          )}
 
           {providers.map((p) => (
             <div className="tr" key={p._id} style={{ gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr 2fr" }}>

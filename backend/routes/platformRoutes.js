@@ -22,7 +22,7 @@ router.get("/stats", async (req, res) => {
       totalReviews,
       totalCategories
     ] = await Promise.all([
-      UserAuth.countDocuments({ status: "active" }),
+      UserAuth.countDocuments({ status: "active", deleted: { $ne: true } }),
       ProviderProfile.countDocuments({ isActive: true }),
       Job.countDocuments({ status: "completed" }),
       Review.aggregate([
