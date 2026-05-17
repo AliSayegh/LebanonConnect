@@ -13,7 +13,7 @@ export default function ServicePage({ notify }) {
   const { token } = useAuth();
   const client = useMemo(() => api(token), [token]);
 
-  const [city, setCity] = useState("Beirut");
+  const [city, setCity] = useState("");
   const [verified, setVerified] = useState(false);
   const [sort, setSort] = useState("rating");
   const [page, setPage] = useState(1);
@@ -64,7 +64,7 @@ export default function ServicePage({ notify }) {
         <h1 className="heroMegaTitle">
           {serviceNameDisplay} <span>Providers</span>
         </h1>
-        <p className="muted">Find the best {serviceNameDisplay.toLowerCase()} experts in {city}</p>
+        <p className="muted">Find the best {serviceNameDisplay.toLowerCase()} experts{city ? ` in ${city}` : ' across Lebanon'}</p>
 
         <div className="heroMegaFilters" style={{ marginTop: "2rem" }}>
           <div className="field">
