@@ -39,6 +39,8 @@ export default function Admin({ notify }) {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showBanned, setShowBanned] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const nav = useNavigate();
 
   const [strikeOpen, setStrikeOpen] = useState(false);
@@ -51,7 +53,7 @@ export default function Admin({ notify }) {
       setLoading(true);
       const [res, provRes] = await Promise.all([
         client.get("/api/admin/stats"),
-        client.get(`/api/admin/providers?showBanned=${showBanned}`)
+        client.get(`/api/admin/providers?showBanned=${showBanned}&search=${encodeURIComponent(search)}`)
       ]);
       setStats(res.data);
       setProviders(provRes.data.items || []);
@@ -65,7 +67,13 @@ export default function Admin({ notify }) {
   useEffect(() => {
     load();
     // eslint-disable-next-line
-  }, [showBanned]);
+  }, [showBanned, search]);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput), 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const openStrikeModal = (userId) => {
     setStrikeTarget(userId);
@@ -135,25 +143,48 @@ export default function Admin({ notify }) {
       </div>
 
       <motion.div className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="tableHead" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="tableHead" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <div>
             <h3>Providers</h3>
             <p className="muted tiny">Latest providers (profiles)</p>
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-            <input 
-              type="checkbox" 
-              checked={showBanned} 
-              onChange={(e) => setShowBanned(e.target.checked)} 
-              style={{ accentColor: "var(--accent2)" }}
-            />
-            <span className="muted small">Show Banned Users</span>
-          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ position: "relative" }}>
+              <input
+                type="text"
+                className="input"
+                placeholder="Search by name or category…"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                style={{
+                  width: 260,
+                  padding: "8px 14px 8px 36px",
+                  fontSize: 13,
+                  height: 36,
+                  borderRadius: 10,
+                }}
+              />
+              <span style={{
+                position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)",
+                fontSize: 15, opacity: 0.45, pointerEvents: "none"
+              }}>🔍</span>
+            </div>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <input 
+                type="checkbox" 
+                checked={showBanned} 
+                onChange={(e) => setShowBanned(e.target.checked)} 
+                style={{ accentColor: "var(--accent2)" }}
+              />
+              <span className="muted small">Show Banned Users</span>
+            </label>
+          </div>
         </div>
 
         <div className="table">
-          <div className="tr th" style={{ gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr 2fr" }}>
+          <div className="tr th" style={{ gridTemplateColumns: "1.5fr 1.2fr 1fr 0.8fr 0.8fr 0.8fr 2fr" }}>
             <div>Name</div>
+            <div>Category</div>
             <div>City</div>
             <div>Verified</div>
             <div>Strikes</div>
@@ -170,12 +201,21 @@ export default function Admin({ notify }) {
           )}
 
           {providers.map((p) => (
-            <div className="tr" key={p._id} style={{ gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr 2fr" }}>
+            <div className="tr" key={p._id} style={{ gridTemplateColumns: "1.5fr 1.2fr 1fr 0.8fr 0.8fr 0.8fr 2fr" }}>
               <div className="mono" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 {p.displayName || "—"}
                 {(p.strike >= 3 || p.isActive === false) && (
                   <span style={{ fontSize: "10px", padding: "2px 6px", background: "var(--accent2)", color: "black", borderRadius: "4px", fontWeight: "bold" }}>BANNED</span>
                 )}
+              </div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {(p.categoryIds || []).length > 0
+                  ? p.categoryIds.map((cat) => (
+                      <span key={cat._id || cat} className="pill" style={{ fontSize: 11 }}>
+                        {cat.name || "—"}
+                      </span>
+                    ))
+                  : "—"}
               </div>
               <div>{p.city || "—"}</div>
               <div>{p.isVerified ? "✅" : "—"}</div>

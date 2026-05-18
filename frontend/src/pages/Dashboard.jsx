@@ -68,11 +68,13 @@ export default function Dashboard({ notify }) {
   const [reportType, setReportType] = useState("");
   const [reportDetails, setReportDetails] = useState("");
 
-
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewJob, setReviewJob] = useState(null);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
+
+  // Admin-only: reports list
+  const [reports, setReports] = useState([]);
 
   const load = useCallback(async () => {
     try {
@@ -109,10 +111,32 @@ export default function Dashboard({ notify }) {
     }
   }, [client, user]);
 
+  // Load reports for admin
+  const loadReports = useCallback(async () => {
+    if (user?.role !== "admin") return;
+    try {
+      const res = await client.get("/api/reports");
+      setReports(res.data || []);
+    } catch (e) {
+      console.error("Reports load error", e);
+    }
+  }, [client, user]);
+
   useEffect(() => {
     load();
     loadProviderData();
-  }, [load, loadProviderData]);
+    loadReports();
+  }, [load, loadProviderData, loadReports]);
+
+  const updateReportStatus = async (reportId, newStatus) => {
+    try {
+      await client.patch(`/api/reports/${reportId}/status`, { status: newStatus });
+      notify?.("success", "Updated", `Report marked as ${newStatus}`);
+      setReports((prev) => prev.map((r) => r._id === reportId ? { ...r, status: newStatus } : r));
+    } catch (e) {
+      notify?.("error", "Error", e?.response?.data?.message || "Failed to update report");
+    }
+  };
 
   const acceptJob = async (jobId) => {
     try {
@@ -235,6 +259,7 @@ export default function Dashboard({ notify }) {
 };
 
   const empty = !loading && jobs.length === 0;
+  const [dashTab, setDashTab] = useState("jobs");
 
   return (
     <div className="page" style={{ alignItems: 'flex-start', padding: '28px 24px' }}>
@@ -263,6 +288,22 @@ export default function Dashboard({ notify }) {
         )}
       </motion.div>
 
+      {/* Tab Bar */}
+      {user?.role === "admin" && (
+        <div className="dashTabs">
+          <button
+            className={`dashTab ${dashTab === "jobs" ? "active" : ""}`}
+            onClick={() => setDashTab("jobs")}
+          >My Jobs</button>
+          <button
+            className={`dashTab ${dashTab === "reports" ? "active" : ""}`}
+            onClick={() => setDashTab("reports")}
+          >Reports{reports.length > 0 ? ` (${reports.length})` : ""}</button>
+        </div>
+      )}
+
+      {/* Jobs Tab */}
+      {dashTab === "jobs" && (
       <div className="gridJobs">
         {loading && (
           <div className="card">
@@ -395,6 +436,87 @@ export default function Dashboard({ notify }) {
           );
         })}
       </div>
+      )}
+
+      {/* Reports Tab (admin only) */}
+      {dashTab === "reports" && user?.role === "admin" && (
+        <motion.div
+          className="card"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ marginTop: 24, width: "100%" }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div>
+              <h3 style={{ margin: 0, fontWeight: 900, fontSize: 20 }}>Reports</h3>
+              <p className="muted tiny" style={{ marginTop: 4 }}>User-submitted reports ({reports.length} total)</p>
+            </div>
+            <button className="btn ghost" onClick={loadReports} style={{ fontSize: 13 }}>Refresh</button>
+          </div>
+
+          <div className="table">
+            <div className="tr th" style={{ gridTemplateColumns: "1.2fr 1.2fr 0.9fr 2fr 0.8fr 1.2fr" }}>
+              <div>Reporter</div>
+              <div>Reported User</div>
+              <div>Type</div>
+              <div>Details</div>
+              <div>Status</div>
+              <div>Actions</div>
+            </div>
+
+            {reports.length === 0 && (
+              <div style={{ padding: 32, textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.6 }}>📭</div>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: 18 }}>No reports</h3>
+                <p className="muted">No reports have been submitted yet.</p>
+              </div>
+            )}
+
+            {reports.map((r) => (
+              <div className="tr" key={r._id} style={{ gridTemplateColumns: "1.2fr 1.2fr 0.9fr 2fr 0.8fr 1.2fr" }}>
+                <div className="mono" style={{ fontSize: 13 }}>
+                  {r.reporterId?.name || r.reporterId?.email || "—"}
+                </div>
+                <div className="mono" style={{ fontSize: 13 }}>
+                  {r.reportedUserId?.name || r.reportedUserId?.email || "—"}
+                </div>
+                <div>
+                  <span className="pill" style={{ fontSize: 11, textTransform: "capitalize" }}>{(r.type || "—").replace("_", " ")}</span>
+                </div>
+                <div className="muted" style={{ fontSize: 13, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                  {r.details || "—"}
+                </div>
+                <div>
+                  <span className={`reportStatus ${r.status}`}>{(r.status || "open").toUpperCase()}</span>
+                </div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {r.status !== "reviewing" && (
+                    <button
+                      className="btn ghost"
+                      style={{ padding: "4px 10px", fontSize: 12, minHeight: 28, height: "auto" }}
+                      onClick={() => updateReportStatus(r._id, "reviewing")}
+                    >Reviewing</button>
+                  )}
+                  {r.status !== "closed" && (
+                    <button
+                      className="btn ghost"
+                      style={{ padding: "4px 10px", fontSize: 12, minHeight: 28, height: "auto", background: "rgba(60,255,120,0.1)", color: "#80ffaa" }}
+                      onClick={() => updateReportStatus(r._id, "closed")}
+                    >Close</button>
+                  )}
+                  {r.status === "closed" && (
+                    <button
+                      className="btn ghost"
+                      style={{ padding: "4px 10px", fontSize: 12, minHeight: 28, height: "auto" }}
+                      onClick={() => updateReportStatus(r._id, "open")}
+                    >Reopen</button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Confirm Modal */}
       <Modal
@@ -545,11 +667,46 @@ export default function Dashboard({ notify }) {
       </Modal>
 
       <style>{`
+        .dashTabs {
+          display: flex;
+          gap: 4px;
+          padding: 4px;
+          background: rgba(255,255,255,.06);
+          border-radius: 14px;
+          margin-bottom: 8px;
+          width: fit-content;
+        }
+        .dashTab {
+          padding: 8px 20px;
+          border-radius: 10px;
+          border: none;
+          background: transparent;
+          color: rgba(255,255,255,.5);
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .dashTab:hover {
+          color: rgba(255,255,255,.8);
+          background: rgba(255,255,255,.04);
+        }
+        .dashTab.active {
+          background: rgba(212,160,23,.15);
+          color: var(--accent2);
+          border: 1px solid rgba(212,160,23,.3);
+        }
         .gridJobs {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+          grid-template-columns: repeat(3, 1fr);
           gap: 16px;
           margin-top: 20px;
+        }
+        @media (max-width: 1024px) {
+          .gridJobs { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+          .gridJobs { grid-template-columns: 1fr; }
         }
         .jobCard {
           display: flex;
@@ -615,6 +772,16 @@ export default function Dashboard({ notify }) {
         .statusBadge.accepted { background: rgba(60,180,255,.2); color: #80cfff; border: 1px solid rgba(60,180,255,.4); }
         .statusBadge.completed { background: rgba(60,255,120,.2); color: #80ffaa; border: 1px solid rgba(60,255,120,.4); }
         .statusBadge.confirmed { background: rgba(180,60,255,.2); color: #d480ff; border: 1px solid rgba(180,60,255,.4); }
+        .reportStatus{
+          padding: 3px 8px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 800;
+          text-transform: uppercase;
+        }
+        .reportStatus.open{ background: rgba(255,180,60,.15); color: #ffb83c; border: 1px solid rgba(255,180,60,.35); }
+        .reportStatus.reviewing{ background: rgba(60,180,255,.15); color: #80cfff; border: 1px solid rgba(60,180,255,.35); }
+        .reportStatus.closed{ background: rgba(60,255,120,.15); color: #80ffaa; border: 1px solid rgba(60,255,120,.35); }
       `}</style>
     </div>
   );

@@ -41,18 +41,42 @@ router.get("/stats", requireAuth, requireRole("admin"), async (req, res) => {
 });
 
 router.get("/providers", requireAuth, requireRole("admin"), async (req, res) => {
+  const Category = require("../Models/Category");
   const page = Math.max(1, Number(req.query.page || 1));
   const limit = Math.min(50, Math.max(1, Number(req.query.limit || 20)));
   const skip = (page - 1) * limit;
   const showBanned = req.query.showBanned === "true";
+  const search = (req.query.search || "").trim();
 
-  const query = showBanned 
+  const baseQuery = showBanned 
     ? { strike: { $gte: 3 }, deleted: { $ne: true } } 
     : { $or: [{ strike: { $lt: 3 } }, { strike: { $exists: false } }], deleted: { $ne: true } };
 
+  // If search term provided, add name + category filters
+  if (search) {
+    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(escaped, "i");
+
+    // Find category IDs that match the search term
+    const matchingCats = await Category.find({ name: regex }).select("_id").lean();
+    const catIds = matchingCats.map((c) => c._id);
+
+    const searchConditions = [{ displayName: regex }];
+    if (catIds.length > 0) {
+      searchConditions.push({ categoryIds: { $in: catIds } });
+    }
+
+    // Merge search conditions with the base query using $and
+    baseQuery.$and = [{ $or: searchConditions }];
+  }
+
   const [total, items] = await Promise.all([
-    ProviderProfile.countDocuments(query),
-    ProviderProfile.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit)
+    ProviderProfile.countDocuments(baseQuery),
+    ProviderProfile.find(baseQuery)
+      .populate("categoryIds", "name slug")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
   ]);
 
   res.json({ page, limit, total, pages: Math.ceil(total / limit), items });
