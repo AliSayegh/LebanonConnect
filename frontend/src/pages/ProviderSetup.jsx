@@ -19,6 +19,8 @@ export default function ProviderSetup({ notify }) {
   const [selected, setSelected] = useState([]);
 
   const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [isEditMode, setIsEditMode] = useState(false);
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
   const [addressArea, setAddressArea] = useState("");
@@ -51,7 +53,9 @@ export default function ProviderSetup({ notify }) {
 
         const p = me.data.provider;
         if (p) {
+          setIsEditMode(p.onboardingComplete === true);
           setDisplayName(p.displayName || user?.name || "");
+          setEmail(p.userId?.email || user?.email || "");
           setCity(p.city || "");
           setDistrict(p.district || getAreaByCity(p.city || ""));
           setAddressArea(p.addressArea || "");
@@ -60,7 +64,9 @@ export default function ProviderSetup({ notify }) {
           setBasePrice(p.basePrice || 0);
           setSelected((p.categoryIds || []).map(String));
         } else {
+          setIsEditMode(false);
           setDisplayName(user?.name || "");
+          setEmail(user?.email || "");
         }
       } catch (e) {
         const msg = e?.response?.data?.message || e?.message || "Error";
@@ -85,6 +91,7 @@ export default function ProviderSetup({ notify }) {
       const nextErrors = {};
       if (selected.length < 1) nextErrors.selected = "Choose at least 1 category.";
       if (!displayName.trim()) nextErrors.displayName = "Display name is required.";
+      if (!email.trim() || !email.includes("@")) nextErrors.email = "Valid email is required.";
       if (!city.trim()) nextErrors.city = "City is required.";
       else if (!getAreaByCity(city)) nextErrors.city = "Please select a valid Lebanese city.";
       if (!addressArea.trim()) nextErrors.addressArea = "Area is required.";
@@ -107,6 +114,7 @@ export default function ProviderSetup({ notify }) {
 
       await client.patch("/api/providers/me", {
         displayName,
+        email,
         bio,
         city,
         district: district || getAreaByCity(city),
@@ -116,8 +124,8 @@ export default function ProviderSetup({ notify }) {
         basePrice: pricingType === "quote" ? 0 : priceNum
       });
 
-      notify?.("success", "Setup completed", "Your provider profile is now visible.");
-      nav("/dashboard");
+      notify?.("success", isEditMode ? "Profile updated" : "Setup completed", isEditMode ? "Your changes were saved." : "Your provider profile is now visible.");
+      nav(isEditMode ? `/provider/${user.id}` : "/dashboard");
     } catch (e) {
       const msg = e?.response?.data?.message || e?.message || "Error";
       notify?.("error", "Save failed", msg);
@@ -146,19 +154,28 @@ export default function ProviderSetup({ notify }) {
       >
         <div className="setupTop">
           <div>
-            <h1 className="h1">Provider Setup</h1>
+            <h1 className="h1">{isEditMode ? "Edit Profile" : "Provider Setup"}</h1>
             <p className="muted">
-              Complete your profile to appear on Explore and start receiving jobs.
+              {isEditMode ? "Update your profile details and services." : "Complete your profile to appear on Explore and start receiving jobs."}
             </p>
           </div>
-          <span className="pill warn">Required</span>
+          {!isEditMode && <span className="pill warn">Required</span>}
         </div>
 
         <div className="setupGrid">
           <div className="setupLeft">
-            <label className="label">Display name</label>
-            <input className={errors.displayName ? "input inputErr" : "input"} value={displayName} onChange={(e) => { setDisplayName(e.target.value); if (errors.displayName) setErrors(p => ({ ...p, displayName: null })); }} />
-            {errors.displayName && <div className="fieldErr">{errors.displayName}</div>}
+            <div className="two">
+              <div>
+                <label className="label">Display name</label>
+                <input className={errors.displayName ? "input inputErr" : "input"} value={displayName} onChange={(e) => { setDisplayName(e.target.value); if (errors.displayName) setErrors(p => ({ ...p, displayName: null })); }} />
+                {errors.displayName && <div className="fieldErr">{errors.displayName}</div>}
+              </div>
+              <div>
+                <label className="label">Email</label>
+                <input className={errors.email ? "input inputErr" : "input"} type="email" value={email} onChange={(e) => { setEmail(e.target.value); if (errors.email) setErrors(p => ({ ...p, email: null })); }} />
+                {errors.email && <div className="fieldErr">{errors.email}</div>}
+              </div>
+            </div>
 
             <div className="two">
               <div>
@@ -276,11 +293,17 @@ export default function ProviderSetup({ notify }) {
 
             <div className="setupActions">
               <button className="btn primary" disabled={saving} onClick={save}>
-                {saving ? "Saving..." : "Save & Continue"}
+                {saving ? "Saving..." : (isEditMode ? "Save Changes" : "Save & Continue")}
               </button>
-              <button className="btn ghost" onClick={() => nav("/dashboard")}>
-                Skip (not recommended)
-              </button>
+              {isEditMode ? (
+                <button className="btn ghost" onClick={() => nav(`/provider/${user.id}`)}>
+                  Cancel
+                </button>
+              ) : (
+                <button className="btn ghost" onClick={() => nav("/dashboard")}>
+                  Skip (not recommended)
+                </button>
+              )}
             </div>
           </div>
         </div>

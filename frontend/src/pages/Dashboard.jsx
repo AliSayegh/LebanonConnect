@@ -100,7 +100,7 @@ export default function Dashboard({ notify }) {
         client.get("/api/providers/me/strikes")
       ]);
       setProviderProfile(profileRes.data.provider);
-      
+
       const unread = strikesRes.data.strikes;
       if (unread && unread.length > 0) {
         setLatestStrikeReason(unread[unread.length - 1].reason);
@@ -218,45 +218,45 @@ export default function Dashboard({ notify }) {
   };
 
   const submitReport = async () => {
-  try {
-    if (!reportType) {
-      return notify?.(
+    try {
+      if (!reportType) {
+        return notify?.(
+          "error",
+          "Missing type",
+          "Please select a report type"
+        );
+      }
+
+      if (!reportJob) return;
+
+      // determine who is being reported
+      const reportedUserId =
+        user?.role === "customer"
+          ? reportJob.providerId
+          : reportJob.customerId;
+
+      await client.post("/api/reports", {
+        reportedUserId,
+        jobId: reportJob._id,
+        type: reportType,
+        details: reportDetails,
+      });
+
+      notify?.("success", "Report submitted", "We will review it.");
+
+      setReportOpen(false);
+      setReportJob(null);
+      setReportType("");
+      setReportDetails("");
+
+    } catch (e) {
+      notify?.(
         "error",
-        "Missing type",
-        "Please select a report type"
+        "Report failed",
+        e?.response?.data?.message || "Server error"
       );
     }
-
-    if (!reportJob) return;
-
-    // determine who is being reported
-    const reportedUserId =
-      user?.role === "customer"
-        ? reportJob.providerId
-        : reportJob.customerId;
-
-    await client.post("/api/reports", {
-      reportedUserId,
-      jobId: reportJob._id,
-      type: reportType,
-      details: reportDetails,
-    });
-
-    notify?.("success", "Report submitted", "We will review it.");
-
-    setReportOpen(false);
-    setReportJob(null);
-    setReportType("");
-    setReportDetails("");
-
-  } catch (e) {
-    notify?.(
-      "error",
-      "Report failed",
-      e?.response?.data?.message || "Server error"
-    );
-  }
-};
+  };
 
   const empty = !loading && jobs.length === 0;
   const [dashTab, setDashTab] = useState("jobs");
@@ -294,7 +294,7 @@ export default function Dashboard({ notify }) {
           <button
             className={`dashTab ${dashTab === "jobs" ? "active" : ""}`}
             onClick={() => setDashTab("jobs")}
-          >My Jobs</button>
+          >Chats</button>
           <button
             className={`dashTab ${dashTab === "reports" ? "active" : ""}`}
             onClick={() => setDashTab("reports")}
@@ -304,138 +304,143 @@ export default function Dashboard({ notify }) {
 
       {/* Jobs Tab */}
       {dashTab === "jobs" && (
-      <div className="gridJobs">
-        {loading && (
-          <div className="card">
-            <div className="skeletonLine" />
-            <div className="skeletonLine short" />
-          </div>
-        )}
+        <div className="gridJobs">
+          {loading && (
+            <div className="card">
+              <div className="skeletonLine" />
+              <div className="skeletonLine short" />
+            </div>
+          )}
 
-        {empty && (
-          <div className="card" style={{ padding: 32, textAlign: 'center', gridColumn: '1 / -1' }}>
-            <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.6 }}>📋</div>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: 20 }}>No data available</h3>
-            <p className="muted" style={{ maxWidth: 360, margin: '0 auto' }}>
-              {user?.role === 'customer'
-                ? 'You haven\'t requested any jobs yet. Click "Request Job" to get started.'
-                : 'No job requests have been received yet. They will appear here once a customer sends one.'}
-            </p>
-          </div>
-        )}
+          {empty && (
+            <div className="card" style={{ padding: 32, textAlign: 'center', gridColumn: '1 / -1' }}>
+              <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.6 }}>📋</div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: 20 }}>No data available</h3>
+              <p className="muted" style={{ maxWidth: 360, margin: '0 auto' }}>
+                {user?.role === 'customer'
+                  ? 'You haven\'t requested any jobs yet. Click "Request Job" to get started.'
+                  : 'No job requests have been received yet. They will appear here once a customer sends one.'}
+              </p>
+            </div>
+          )}
 
-        {(jobs || []).map((job) => {
-          const status = job.status || "open";
+          {(jobs || []).map((job) => {
+            const status = job.status || "open";
 
-          return (
-            <motion.div
-              key={job._id}
-              className="card jobCard"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="jobTop">
-                <div className="jobTitleRow">
-                  <div className="jobTitle">{job.title || "Job request"}</div>
-                  <StatusBadge status={status} />
-                </div>
-                <div className="jobMeta">
-                  <span className="pill">{job.city}</span>
-                  <span className="pill">{job.addressArea || "—"}</span>
-                  <span className="pill mono">
-                    {new Date(job.createdAt).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="jobBody">
-                <div className="muted">
-                  {job.description || "No description"}
-                </div>
-
-                <div className="jobMoneyRow">
-                  <div>
-                    <div className="muted tiny">Quoted</div>
-                    <Money n={job.quotedPrice} />
+            return (
+              <motion.div
+                key={job._id}
+                className="card jobCard"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="jobTop">
+                  <div className="jobTitleRow">
+                    <div className="jobTitle">{job.title || "Job request"}</div>
+                    <StatusBadge status={status} />
                   </div>
-                  <div>
-                    <div className="muted tiny">Final</div>
-                    <Money n={job.finalPrice} />
-                  </div>
-                  <div>
-                    <div className="muted tiny">Commission</div>
-                    <Money n={job?.commission?.amount} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="jobActions">
-                <Link className="btn ghost" to={`/chat/${job._id}`}>
-                  Open Chat
-                </Link>
-
-                {user?.role === "customer"  && (
-                  <button
-                    className="btn report"
-                    onClick={() => {
-                          setReportJob(job);
-                         setReportOpen(true);
-                        }}
-                  >
-                    Report
-                  </button>
-                )}
-
-                {user?.role === "provider" && status === "open" && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-                    <button
-                      className="btn primary"
-                      disabled={!providerProfile?.isVerified}
-                      onClick={() => acceptJob(job._id)}
-                      style={{ width: "100%" }}
-                    >
-                      Accept
-                    </button>
-                    {!providerProfile?.isVerified && (
-                      <span className="muted tiny" style={{ textAlign: "center", color: "var(--accent2)" }}>
-                        You must be verified by admin to accept jobs.
+                  <div className="jobMeta">
+                    <span className="pill">{job.city}</span>
+                    <span className="pill">{job.addressArea || "—"}</span>
+                    <span className="pill mono">
+                      {new Date(job.createdAt).toLocaleString()}
+                    </span>
+                    {user?.role === "customer" && job.providerId?.name && (
+                      <span className="provider-name">
+                        {job.providerId.name}
                       </span>
                     )}
                   </div>
-                )}
+                </div>
 
-                {user?.role === "provider" && status === "accepted" && (
-                  <button
-                    className="btn primary"
-                    onClick={() => completeJob(job._id)}
-                  >
-                    Mark Completed
-                  </button>
-                )}
+                <div className="jobBody">
+                  <div className="muted">
+                    {job.description || "No description"}
+                  </div>
 
-                {user?.role === "customer" && status === "completed" && (
-                  <button
-                    className="btn primary"
-                    onClick={() => openConfirm(job)}
-                  >
-                    Confirm
-                  </button>
-                )}
+                  <div className="jobMoneyRow">
+                    <div>
+                      <div className="muted tiny">Quoted</div>
+                      <Money n={job.quotedPrice} />
+                    </div>
+                    <div>
+                      <div className="muted tiny">Final</div>
+                      <Money n={job.finalPrice} />
+                    </div>
+                    <div>
+                      <div className="muted tiny">Commission</div>
+                      <Money n={job?.commission?.amount} />
+                    </div>
+                  </div>
+                </div>
 
-                {user?.role === "customer" && status === "confirmed" && (
-                  <button
-                    className="btn primary"
-                    onClick={() => openReview(job)}
-                  >
-                    Leave Review
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+                <div className="jobActions">
+                  <Link className="btn ghost" to={`/chat/${job._id}`}>
+                    Open Chat
+                  </Link>
+
+                  {user?.role === "customer" && (
+                    <button
+                      className="btn report"
+                      onClick={() => {
+                        setReportJob(job);
+                        setReportOpen(true);
+                      }}
+                    >
+                      Report
+                    </button>
+                  )}
+
+                  {user?.role === "provider" && status === "open" && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+                      <button
+                        className="btn primary"
+                        disabled={!providerProfile?.isVerified}
+                        onClick={() => acceptJob(job._id)}
+                        style={{ width: "100%" }}
+                      >
+                        Accept
+                      </button>
+                      {!providerProfile?.isVerified && (
+                        <span className="muted tiny" style={{ textAlign: "center", color: "var(--accent2)" }}>
+                          You must be verified by admin to accept jobs.
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {user?.role === "provider" && status === "accepted" && (
+                    <button
+                      className="btn primary"
+                      onClick={() => completeJob(job._id)}
+                    >
+                      Mark Completed
+                    </button>
+                  )}
+
+                  {user?.role === "customer" && status === "completed" && (
+                    <button
+                      className="btn primary"
+                      onClick={() => openConfirm(job)}
+                    >
+                      Confirm
+                    </button>
+                  )}
+
+                  {user?.role === "customer" && status === "confirmed" && (
+                    <button
+                      className="btn primary"
+                      onClick={() => openReview(job)}
+                    >
+                      Leave Review
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
       )}
 
       {/* Reports Tab (admin only) */}
@@ -595,65 +600,65 @@ export default function Dashboard({ notify }) {
           </div>
         </div>
       </Modal>
-       {/* Report Modal */}
+      {/* Report Modal */}
       <Modal
         open={reportOpen}
         title="Leave a report"
         onClose={() => setReportOpen(false)}
       >
         <div className="modalBody">
-  <p className="muted">
-    Please select the reason for reporting this user.
-  </p>
+          <p className="muted">
+            Please select the reason for reporting this user.
+          </p>
 
-  <label className="field">
-    <div className="label">Report Type *</div>
-    <CustomSelect
-      value={reportType}
-      onChange={(v) => setReportType(v)}
-      options={[
-        { value: "phone_share", label: "Phone number sharing" },
-        { value: "scam", label: "Scam / Fraud" },
-        { value: "abuse", label: "Abusive behavior" },
-        { value: "spam", label: "Spam" },
-      ]}
-      placeholder="Select type"
-      ariaLabel="Report type"
-    />
-  </label>
+          <label className="field">
+            <div className="label">Report Type *</div>
+            <CustomSelect
+              value={reportType}
+              onChange={(v) => setReportType(v)}
+              options={[
+                { value: "phone_share", label: "Phone number sharing" },
+                { value: "scam", label: "Scam / Fraud" },
+                { value: "abuse", label: "Abusive behavior" },
+                { value: "spam", label: "Spam" },
+              ]}
+              placeholder="Select type"
+              ariaLabel="Report type"
+            />
+          </label>
 
-  <label className="field">
-    <div className="label">Details (optional)</div>
-    <textarea
-      className="input"
-      rows={4}
-      value={reportDetails}
-      onChange={(e) => setReportDetails(e.target.value)}
-      placeholder="Describe what happened..."
-    />
-  </label>
+          <label className="field">
+            <div className="label">Details (optional)</div>
+            <textarea
+              className="input"
+              rows={4}
+              value={reportDetails}
+              onChange={(e) => setReportDetails(e.target.value)}
+              placeholder="Describe what happened..."
+            />
+          </label>
 
-  <div className="rowEnd">
-    <button
-      className="btn ghost"
-      onClick={() => setReportOpen(false)}
-    >
-      Cancel
-    </button>
-    <button
-      className="btn primary"
-      onClick={submitReport}
-    >
-      Submit Report
-    </button>
-  </div>
-</div>
-</Modal>
+          <div className="rowEnd">
+            <button
+              className="btn ghost"
+              onClick={() => setReportOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn primary"
+              onClick={submitReport}
+            >
+              Submit Report
+            </button>
+          </div>
+        </div>
+      </Modal>
       {/* Strike Modal */}
       <Modal open={strikePopupOpen} title="⚠️ Strike Received" onClose={() => setStrikePopupOpen(false)}>
         <div className="modalBody">
           <p className="muted" style={{ marginBottom: 16 }}>
-            You have received a strike from an administrator. 
+            You have received a strike from an administrator.
             Accumulating 3 strikes will result in a permanent ban.
           </p>
           <div style={{ padding: 16, background: "rgba(255,80,80,0.1)", border: "1px solid rgba(255,80,80,0.3)", borderRadius: 12 }}>
@@ -736,6 +741,12 @@ export default function Dashboard({ notify }) {
           display: flex;
           gap: 6px;
           flex-wrap: wrap;
+        }
+        .provider-name {
+          flex-basis: 100%;
+          font-size: 13px;
+          color: rgba(255,255,255,.6);
+          margin-top: 2px;
         }
         .jobBody {
           flex: 1;

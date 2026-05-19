@@ -52,9 +52,14 @@ export default function Navbar() {
             )}
 
             {user.role === "provider" && (
-              <NavLink to="/subscribe" className={({ isActive }) => (isActive ? "link active" : "link")}>
-                Subscription
-              </NavLink>
+              <>
+                <NavLink to={`/provider/${user.id}`} className={({ isActive }) => (isActive ? "link active" : "link")}>
+                  My Profile
+                </NavLink>
+                <NavLink to="/subscribe" className={({ isActive }) => (isActive ? "link active" : "link")}>
+                  Subscription
+                </NavLink>
+              </>
             )}
 
             {user.role === "admin" && (

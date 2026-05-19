@@ -1,5 +1,3 @@
-module.exports = require("./JobRoutes");
-
 const router = require("express").Router();
 const mongoose = require("mongoose");
 const Job = require("../Models/Job");
@@ -24,7 +22,9 @@ router.get("/mine", requireAuth, async (req, res) => {
       Job.find(q)
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(lim),
+        .limit(lim)
+        .populate("providerId", "name email")
+        .populate("customerId", "name email"),
       Job.countDocuments(q)
     ]);
 

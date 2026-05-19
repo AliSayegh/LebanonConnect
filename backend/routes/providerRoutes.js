@@ -4,6 +4,7 @@ const ProviderProfile = require("../Models/ProviderProfile");
 const Category = require("../Models/Category");
 const { requireAuth, requireRole } = require("../Middleware/auth");
 const Strike = require("../Models/Strike");
+const UserAuth = require("../Models/UserAuth");
 const { isValidLebanonCity } = require("../utils/lebanonCities");
 const { getDistrictByCity } = require("../utils/locations");
 
@@ -161,7 +162,7 @@ router.get("/featured", async (req, res) => {
 
 // ✅ Get my provider profile
 router.get("/me", requireAuth, requireRole("provider"), async (req, res) => {
-  const p = await ProviderProfile.findOne({ userId: req.user.id }).lean();
+  const p = await ProviderProfile.findOne({ userId: req.user.id }).populate("userId", "email name").lean();
   res.json({ provider: p || null });
 });
 
@@ -188,7 +189,7 @@ router.get("/me/strikes", requireAuth, requireRole("provider"), async (req, res)
 router.patch("/me", requireAuth, requireRole("provider"), async (req, res) => {
   try {
     const userId = req.user.id;
-    const { displayName, bio, city, addressArea, categoryIds, pricingType, basePrice } = req.body;
+    const { displayName, email, bio, city, addressArea, categoryIds, pricingType, basePrice } = req.body;
 
     // Validate categories
     if (!Array.isArray(categoryIds) || categoryIds.length < 1) {
@@ -229,6 +230,15 @@ router.patch("/me", requireAuth, requireRole("provider"), async (req, res) => {
       if (!Number.isFinite(priceNum) || priceNum < 0) {
         return res.status(400).json({ message: "Price must be a number (min 0)" });
       }
+    }
+
+    if (email) {
+      const emailStr = email.trim().toLowerCase();
+      const existing = await UserAuth.findOne({ email: emailStr, _id: { $ne: userId } });
+      if (existing) {
+        return res.status(400).json({ message: "Email is already in use by another account." });
+      }
+      await UserAuth.findByIdAndUpdate(userId, { email: emailStr });
     }
 
     const update = {

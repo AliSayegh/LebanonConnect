@@ -354,9 +354,15 @@ function Strikes({ count = 0, max = 3 }) {
         </div>
 
         <div className="cardActions">
-          <button className="btn primary" onClick={startRequest}>
-            Request a job
-          </button>
+          {user?.id === userId ? (
+            <button className="btn primary" onClick={() => nav("/provider/setup")}>
+              Edit Profile
+            </button>
+          ) : (
+            <button className="btn primary" onClick={startRequest}>
+              Request a job
+            </button>
+          )}
           <button className="btn ghost" onClick={() => nav("/")}>
             Back
           </button>
