@@ -77,6 +77,12 @@ router.get("/", requireAuth, async (req, res) => {
       return r;
     });
 
+    reports.sort((a, b) => {
+      if (a.status === "closed" && b.status !== "closed") return 1;
+      if (a.status !== "closed" && b.status === "closed") return -1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
     res.json(reports);
   } catch (err) {
     console.error(err);
@@ -169,6 +175,12 @@ router.get("/provider/:id", requireAuth, requireRole("admin"), async (req, res) 
         r.closedBy.name = nameMap[r.closedBy._id.toString()] || r.closedBy.email;
       }
       return r;
+    });
+
+    reports.sort((a, b) => {
+      if (a.status === "closed" && b.status !== "closed") return 1;
+      if (a.status !== "closed" && b.status === "closed") return -1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
     res.json(reports);
