@@ -6,6 +6,7 @@ const checkProviderCanAccept = require("../Middleware/checkProviderCanAccept");
 const UserAuth = require("../Models/UserAuth");
 const Strike = require("../Models/Strike");
 const Message = require("../Models/Message");
+const Report = require("../Models/Report");
 
 
 
@@ -272,6 +273,25 @@ router.post("/provider/:id/chat", requireAuth, requireRole("admin"), async (req,
   } catch (err) {
     console.error("Support chat error:", err);
     res.status(500).json({ message: "Server error creating support chat" });
+  }
+});
+
+// Delete a chat/job completely
+router.delete("/chat/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    const jobId = req.params.id;
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: "Chat/Job not found" });
+
+    // Cascading delete
+    await Message.deleteMany({ jobId });
+    await Report.updateMany({ jobId }, { $unset: { jobId: 1 } });
+    await Job.findByIdAndDelete(jobId);
+
+    res.json({ message: "Chat deleted successfully" });
+  } catch (err) {
+    console.error("Delete chat error:", err);
+    res.status(500).json({ message: "Server error deleting chat" });
   }
 });
 

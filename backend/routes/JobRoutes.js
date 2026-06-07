@@ -15,8 +15,9 @@ router.get("/mine", requireAuth, async (req, res) => {
     const skip = (pageNum - 1) * lim;
 
     const uid = req.user.id;
+    const role = req.user.role;
 
-    const q = { $or: [{ customerId: uid }, { providerId: uid }] };
+    const q = role === "admin" ? {} : { $or: [{ customerId: uid }, { providerId: uid }] };
     if (status) q.status = status;
 
     let [items, total] = await Promise.all([
