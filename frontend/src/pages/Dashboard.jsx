@@ -319,7 +319,7 @@ export default function Dashboard({ notify }) {
   const [dashTab, setDashTab] = useState("jobs");
 
   return (
-    <div className="page" style={{ alignItems: 'flex-start', padding: '28px 24px' }}>
+    <div className="page dashPage">
       <motion.div
         className="pageHead"
         initial={{ opacity: 0, y: 8 }}
@@ -875,42 +875,18 @@ export default function Dashboard({ notify }) {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 8px;
-        }
-        .jobTitle {
-          font-weight: 900;
-          font-size: 18px;
-        }
-        .jobMeta {
-          display: flex;
-          gap: 6px;
           flex-wrap: wrap;
-        }
-        .provider-name {
-          flex-basis: 100%;
-          font-size: 13px;
-          color: rgba(255,255,255,.6);
-          margin-top: 2px;
-        }
-        .jobBody {
-          flex: 1;
-        }
-        .jobMoneyRow {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 10px;
-          margin-top: 16px;
-          padding: 12px;
-          background: rgba(0,0,0,.25);
-          border-radius: 14px;
-          border: 1px solid rgba(255,255,255,.08);
+          gap: 6px;
         }
         .jobActions {
           display: flex;
           gap: 10px;
           margin-top: 16px;
+          flex-wrap: wrap;
         }
         .jobActions .btn {
           flex: 1;
+          min-width: 80px;
           display: grid;
           place-items: center;
           text-align: center;
@@ -921,6 +897,7 @@ export default function Dashboard({ notify }) {
           font-size: 11px;
           font-weight: 900;
           text-transform: uppercase;
+          white-space: nowrap;
         }
         .statusBadge.open { background: rgba(212,160,23,.2); color: var(--accent2); border: 1px solid rgba(212,160,23,.4); }
         .statusBadge.accepted { background: rgba(60,180,255,.2); color: #80cfff; border: 1px solid rgba(60,180,255,.4); }
@@ -932,10 +909,26 @@ export default function Dashboard({ notify }) {
           font-size: 11px;
           font-weight: 800;
           text-transform: uppercase;
+          white-space: nowrap;
         }
         .reportStatus.open{ background: rgba(255,180,60,.15); color: #ffb83c; border: 1px solid rgba(255,180,60,.35); }
         .reportStatus.reviewing{ background: rgba(60,180,255,.15); color: #80cfff; border: 1px solid rgba(60,180,255,.35); }
         .reportStatus.closed{ background: rgba(60,255,120,.15); color: #80ffaa; border: 1px solid rgba(60,255,120,.35); }
+
+        /* ── Mobile layout fixes ── */
+        .dashPage { align-items: flex-start; }
+        @media (max-width: 767px) {
+          .dashPage { padding: 16px 12px !important; }
+          .dashPage .pageHead { flex-wrap: wrap; gap: 8px; }
+          .dashPage .pageHead > div:first-child { width: 100%; }
+          .dashPage .pageHead .btn { width: 100%; text-align: center; }
+          .dashTabs { width: 100%; }
+          .dashTab { flex: 1; text-align: center; padding: 8px 8px; font-size: 13px; }
+          .jobMoneyRow { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 1023px) and (min-width: 768px) {
+          .dashPage { padding: 20px 16px; }
+        }
       `}</style>
     </div>
   );

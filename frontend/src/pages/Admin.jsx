@@ -122,7 +122,7 @@ export default function Admin({ notify }) {
   }, {});
 
   return (
-    <div className="page" style={{ alignItems: 'flex-start', padding: '28px 24px' }}>
+    <div className="page adminPage">
       <motion.div className="pageHead" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
         <div>
           <h1 className="h1">Admin Dashboard</h1>
@@ -152,12 +152,11 @@ export default function Admin({ notify }) {
             <div style={{ position: "relative" }}>
               <input
                 type="text"
-                className="input"
+                className="input adminSearchInput"
                 placeholder="Search by name or category…"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 style={{
-                  width: 260,
                   padding: "8px 14px 8px 36px",
                   fontSize: 13,
                   height: 36,
@@ -262,6 +261,7 @@ export default function Admin({ notify }) {
       </Modal>
 
       <style>{`
+        .adminPage { align-items: flex-start; padding: 28px 24px; }
         .gridStats{
           display:grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -272,6 +272,21 @@ export default function Admin({ notify }) {
         @media(max-width: 520px){ .gridStats{ grid-template-columns: 1fr; } }
         .statCard{ padding: 14px !important; border-radius: 18px; }
         .statValue{ font-size: 28px; font-weight: 900; margin-top: 6px; }
+
+        /* Admin table: card layout on mobile */
+        .adminSearchInput { width: 260px; }
+        @media (max-width: 767px) {
+          .adminPage { padding: 16px 12px !important; }
+          .adminPage .pageHead { flex-wrap: wrap; }
+          .adminSearchInput { width: 100% !important; }
+          .table .tr { display: flex; flex-direction: column; gap: 6px; }
+          .table .tr.th { display: none; }
+          .table .tr > div::before { font-size: 10px; font-weight: 900; color: rgba(255,255,255,.45); text-transform: uppercase; letter-spacing: .6px; display: block; margin-bottom: 2px; }
+        }
+        @media (max-width: 980px) and (min-width: 768px) {
+          .adminSearchInput { width: 180px; }
+          .adminPage { padding: 20px 16px; }
+        }
       `}</style>
     </div>
   );

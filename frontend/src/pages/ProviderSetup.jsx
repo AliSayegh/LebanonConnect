@@ -310,8 +310,8 @@ export default function ProviderSetup({ notify }) {
       </motion.div>
 
       <style>{`
-        .setupCard{ padding: 24px !important; border-radius: 22px; }
-        .setupTop{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom: 24px; }
+        .setupCard{ padding: 24px !important; border-radius: 22px; width: min(1100px, 96vw); }
+        .setupTop{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom: 24px; flex-wrap: wrap; }
         .pill.warn{ border-color: rgba(255,200,80,.55); background: rgba(255,200,80,.10); color: var(--accent2); }
 
         .fieldErr{ margin-top: 6px; font-size: 12px; font-weight: 700; color: rgba(255,120,120,.95); }
@@ -342,6 +342,9 @@ export default function ProviderSetup({ notify }) {
           color: rgba(255,255,255,.86);
           cursor:pointer;
           transition: transform .12s ease, background .12s ease, border-color .12s ease;
+          min-height: 44px;
+          display: flex;
+          align-items: center;
         }
         .cat:hover{ transform: translateY(-1px); }
         .cat.on{
@@ -352,9 +355,16 @@ export default function ProviderSetup({ notify }) {
         }
 
         .setupHint{ margin-top: 12px; display:flex; gap: 8px; align-items:center; }
-        .setupActions{ display:flex; gap: 10px; }
+        .setupActions{ display:flex; gap: 10px; flex-wrap: wrap; }
+        .setupActions .btn { flex: 1; min-width: 120px; text-align: center; }
         .btn.sm{ height: 36px; padding: 0 12px; border-radius: 12px; font-size: 13px; }
         .priceHint{ display:flex; flex-direction:column; gap: 4px; }
+
+        @media (max-width: 480px) {
+          .setupCard { padding: 16px !important; }
+          .setupLeft { padding: 14px; }
+          .setupBox  { padding: 14px; }
+        }
       `}</style>
     </div>
   );

@@ -152,6 +152,299 @@ a{ color:inherit; text-decoration:none; }
 .btn.report:hover{ background: rgba(241, 9, 9, 0.705); }
 
 
+/* =====================================================
+   MOBILE-FIRST RESPONSIVE ADDITIONS
+   Covers: 320px | 375px | 768px | 1024px | 1440px | 1920px
+   ===================================================== */
+
+/* ── Global touch targets ── */
+.btn {
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+}
+.link, .segBtn, .cat, .star, .heroDot, .hero2Dot {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Prevent any element from causing horizontal scroll ── */
+.home, .page, .chatShell {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ── Chat shell: fix 100vw horizontal scroll ── */
+.chatShell {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* ── Bubble max-width: loosen on small screens ── */
+@media (max-width: 480px) {
+  .bubble { max-width: 90%; }
+}
+
+/* ────────────────────────────────────────────────────
+   PHONE — max 767px
+   ──────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+
+  /* Page base */
+  .page {
+    padding: 16px 12px;
+    min-height: calc(100vh - 70px);
+  }
+
+  /* pageHead flex row → wrap */
+  .pageHead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .pageHead .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* h1 size scale down */
+  .h1 { font-size: 22px; }
+  .h2 { font-size: 18px; }
+
+  /* Auth card full-width */
+  .authCard { width: min(520px, 100%); }
+
+  /* Profile card full-width */
+  .profileCard { width: min(760px, 100%); }
+
+  /* Profile top: stack avatar + meta vertically */
+  .profileTop {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .profileStats { flex-wrap: wrap; }
+  .cardActions { flex-wrap: wrap; }
+  .cardActions .btn { flex: 1; min-width: 100px; text-align: center; }
+
+  /* topRow: wrap on mobile */
+  .topRow {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* homeTopRow */
+  .homeTopRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .homeTopRow .pager { width: 100%; justify-content: flex-end; }
+
+  /* homeBody: full width */
+  .homeBody { width: 100%; padding: 12px 0 32px; }
+
+  /* Filters: full-width fields */
+  .filters { flex-direction: column; gap: 10px; }
+  .field { min-width: unset !important; width: 100%; }
+
+  /* Hero: relax min-height on short phones */
+  .heroMega { min-height: unset; }
+  .heroMega .heroCarousel2Frame { height: calc(100svh - 70px); min-height: 520px; }
+
+  /* Hero 2 stats: shrink min-width so they don't overflow the card */
+  .hero2Stat { min-width: 100px !important; }
+  .hero2Stats { gap: 8px; }
+
+  /* Hero card: proper margins on small phones */
+  .hero2Card {
+    margin: 42px 14px 14px !important;
+    width: calc(100% - 28px) !important;
+    padding: 16px 14px 14px !important;
+    border-radius: 18px !important;
+    gap: 8px !important;
+  }
+  .hero2Title { font-size: clamp(20px, 5vw, 30px) !important; }
+  .hero2Sub   { font-size: 13px; }
+  .hero2Badge { font-size: 11px; }
+
+  /* Hero mega inner */
+  .heroMegaInner { padding: 16px 12px 12px; }
+  .heroMegaTitle { font-size: clamp(26px, 7vw, 44px) !important; }
+  .heroMegaFilters { padding: 12px; border-radius: 18px; }
+  .heroMegaFilters .field { min-width: unset; width: 100%; }
+
+  /* Subscription page */
+  .pageHead .subInfo { flex-wrap: wrap; gap: 6px; }
+
+  /* listItem: stack on mobile */
+  .listItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  /* stats row inside provider card */
+  .statsRow { flex-wrap: wrap; }
+  .stat { min-width: calc(50% - 5px); }
+
+  /* split: already handled at 720px, reinforce */
+  .split { grid-template-columns: 1fr !important; }
+
+  /* grid2: already handled at 620px */
+  .grid2 { grid-template-columns: 1fr !important; }
+
+  /* Service cards: 2 per row minimum on very small */
+  .services-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 1rem;
+  }
+  .service-card { padding: 1.25rem 1rem; }
+  .service-icon-wrapper { width: 60px; height: 60px; margin-bottom: 1rem; }
+  .service-name { font-size: 1rem; }
+
+  /* Featured providers: 1 col */
+  .featured-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+  .featured-section { padding: 3rem 1rem; }
+
+  /* Footer: already responsive, just tighten padding */
+  .footerInner { padding: 28px 14px 18px; gap: 20px; }
+
+  /* Modal: full width with breathing room */
+  .modalOverlay { padding: 12px; align-items: flex-end; }
+  .modalCard {
+    width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* Section headers */
+  .section-header { margin-bottom: 2rem; }
+  .section-subtitle { font-size: 1rem; }
+
+  /* Admin panel actions: already flex-wrap, ensure full-width buttons */
+  .adminActions { flex-direction: column; }
+  .adminActions .btn { width: 100%; }
+
+  /* Subscription plan grid: already 1-col at 900px */
+  .gridPlans { grid-template-columns: 1fr !important; }
+
+  /* Scrollable table container for reports */
+  .table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ────────────────────────────────────────────────────
+   SMALL PHONE — max 479px (extra tight)
+   ──────────────────────────────────────────────────── */
+@media (max-width: 479px) {
+  .page { padding: 12px 10px; }
+
+  .nav { height: 60px; }
+  /* adjust page offset to match smaller navbar */
+  .page { min-height: calc(100vh - 60px); }
+
+  .hero2Card {
+    margin: 34px 10px 10px !important;
+    width: calc(100% - 20px) !important;
+    padding: 14px 12px !important;
+  }
+
+  /* Make hero stats single row (scrollable) or 2×2 */
+  .hero2Stats { flex-wrap: wrap; }
+  .hero2Stat { flex: 1; min-width: 100px !important; }
+
+  .h1 { font-size: 20px; }
+  .heroCarouselFrame { height: 300px; }
+  .heroSlideTitle { font-size: 22px; }
+}
+
+/* ────────────────────────────────────────────────────
+   TABLET — 768px – 1023px
+   ──────────────────────────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+
+  .page { padding: 20px 18px; }
+
+  /* pageHead: allow wrap */
+  .pageHead { flex-wrap: wrap; gap: 10px; }
+
+  /* homeBody */
+  .homeBody { width: min(1100px, 96vw); }
+
+  /* hero */
+  .hero2Card { width: calc(100% - 60px) !important; }
+  .heroMegaTitle { font-size: clamp(32px, 5vw, 55px) !important; }
+
+  /* Filters: 2-col */
+  .filters { flex-wrap: wrap; }
+  .field { min-width: 200px; }
+
+  /* Modal: centered, not bottom-sheet */
+  .modalOverlay { align-items: center; }
+  .modalCard { border-radius: 22px !important; }
+
+  /* Service grid: 3 col */
+  .services-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+
+  /* Featured: 2 col */
+  .featured-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ────────────────────────────────────────────────────
+   LAPTOP — 1024px – 1439px
+   ──────────────────────────────────────────────────── */
+@media (min-width: 1024px) and (max-width: 1439px) {
+  .page { padding: 24px 20px; }
+  .homeBody { width: min(1100px, 95vw); }
+}
+
+/* ────────────────────────────────────────────────────
+   LARGE DESKTOP — 1440px+
+   ──────────────────────────────────────────────────── */
+@media (min-width: 1440px) {
+  .page { padding: 28px 24px; }
+  .homeBody { width: min(1200px, 90vw); }
+  .nav { padding: 0 32px; }
+}
+
+/* ── Ensure images never overflow ── */
+img, video, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Search page filter row ── */
+@media (max-width: 640px) {
+  .homeTopRow { flex-direction: column; align-items: stretch; }
+  .pager { justify-content: space-between; }
+}
+
+/* ── ProviderProfile reviews head: wrap on narrow ── */
+@media (max-width: 540px) {
+  .ppReviewsHead { flex-direction: column; align-items: flex-start; }
+  .ppPager { justify-content: flex-start; }
+}
+
+/* ── Subscribe page head: subInfo wraps ── */
+@media (max-width: 540px) {
+  .subInfo { flex-wrap: wrap; }
+}
+
+/* ── Ensure no fixed-width inputs overflow their container ── */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  textarea,
+  select {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
 .card{
   background: var(--glass);
   border:1px solid var(--line);
