@@ -108,7 +108,9 @@ io.on("connection", (socket) => {
 
       const uid = socket.user.id;
       const allowed =
-        job.customerId.toString() === uid || job.providerId.toString() === uid;
+        socket.user.role === "admin" ||
+        job.customerId?.toString() === uid || 
+        job.providerId?.toString() === uid;
 
       if (!allowed) {
         return socket.emit("errorMessage", { message: "Not allowed in this chat" });
@@ -148,7 +150,9 @@ io.on("connection", (socket) => {
 
       const uid = socket.user.id;
       const allowed =
-        job.customerId.toString() === uid || job.providerId.toString() === uid;
+        socket.user.role === "admin" ||
+        job.customerId?.toString() === uid || 
+        job.providerId?.toString() === uid;
 
       if (!allowed) {
         return socket.emit("errorMessage", { message: "Not allowed" });
