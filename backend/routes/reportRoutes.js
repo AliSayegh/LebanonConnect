@@ -1,6 +1,7 @@
 // routes/reportRoutes.js
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Report = require("../Models/Report");
 const { requireAuth } = require("../Middleware/auth");
 
@@ -37,6 +38,7 @@ router.post("/", requireAuth, async (req, res) => {
 
 const CustomerProfile = require("../Models/CustomerProfile");
 const ProviderProfile = require("../Models/ProviderProfile");
+const AdminProfile = require("../Models/Adminprofile");
 
 // get all reports
 router.get("/", requireAuth, async (req, res) => {
@@ -151,7 +153,7 @@ router.get("/provider/:id", requireAuth, requireRole("admin"), async (req, res) 
     const [customers, providers, admins] = await Promise.all([
       CustomerProfile.find({ userId: { $in: userIdsArray } }).select("userId fullName").lean(),
       ProviderProfile.find({ userId: { $in: userIdsArray } }).select("userId displayName").lean(),
-      mongoose.model("AdminProfile") ? mongoose.model("AdminProfile").find({ userId: { $in: userIdsArray } }).select("userId").lean() : []
+      AdminProfile.find({ userId: { $in: userIdsArray } }).select("userId").lean()
     ]);
 
     const nameMap = {};
