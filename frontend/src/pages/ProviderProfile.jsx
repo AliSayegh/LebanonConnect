@@ -81,6 +81,10 @@ export default function ProviderProfile({ notify }) {
   const [strikeReason, setStrikeReason] = useState("");
   const [strikeLoading, setStrikeLoading] = useState(false);
 
+  // Admin provider reports state
+  const [providerReports, setProviderReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+
   // Fetch provider info (robust: tries with city, then without)
   useEffect(() => {
     let alive = true;
@@ -143,6 +147,30 @@ export default function ProviderProfile({ notify }) {
       alive = false;
     };
   }, [userId, revPage, client, notify]);
+
+  // Fetch admin provider reports
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      if (user?.role !== "admin") return;
+      try {
+        setReportsLoading(true);
+        const res = await client.get(`/api/reports/provider/${userId}`);
+        if (!alive) return;
+        setProviderReports(res.data || []);
+      } catch (e) {
+        if (!alive) return;
+        setProviderReports([]);
+      } finally {
+        if (alive) setReportsLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [userId, client, user?.role]);
 
   const startRequest = () => {
     if (!token) return nav("/login");
@@ -426,6 +454,51 @@ function Strikes({ count = 0, max = 3 }) {
             </div>
           )}
         </div>
+
+        {/* --- Admin Only: Provider Reports --- */}
+        {user?.role === "admin" && (
+          <div className="ppReviewsSection">
+            <div className="ppReviewsHead">
+              <div>
+                <div className="ppReviewsTitle" style={{ color: "var(--accent)" }}>Provider Reports (Admin Only)</div>
+              </div>
+            </div>
+
+            {reportsLoading ? (
+              <div className="ppEmptyReviews"><Loader label="Loading reports..." /></div>
+            ) : providerReports.length === 0 ? (
+              <div className="ppEmptyReviews">
+                <div className="muted">No reports have been submitted for this provider.</div>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {providerReports.map(r => (
+                  <div key={r._id} className="card" style={{ padding: 16, background: "rgba(0,0,0,0.2)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span className={`reportStatus ${r.status}`}>{(r.status || "open").toUpperCase()}</span>
+                      <span className="pill mono">{new Date(r.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div style={{ marginBottom: 4, display: "flex", gap: 8, alignItems: "center" }}>
+                      <span className="badge" style={{ textTransform: "capitalize", fontSize: 10 }}>{(r.type || "—").replace("_", " ")}</span>
+                      <span className="muted tiny">Reporter: {r.reporterId?.name || r.reporterId?.email || "—"}</span>
+                    </div>
+                    <div className="muted" style={{ fontSize: 13, marginBottom: r.status === "closed" ? 12 : 0 }}>
+                      {r.details || "No details provided."}
+                    </div>
+                    {r.status === "closed" && (
+                      <div style={{ padding: 12, background: "rgba(255,255,255,0.05)", borderRadius: 8, borderLeft: "3px solid var(--accent2)" }}>
+                        <div className="muted tiny" style={{ marginBottom: 4 }}>
+                          Resolution Note (Closed by {r.closedBy?.name || r.closedBy?.email || "Admin"} on {new Date(r.closedAt).toLocaleDateString()})
+                        </div>
+                        <div style={{ fontSize: 13, whiteSpace: "pre-wrap" }}>{r.resolutionNote || "No note."}</div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* Strike Modal */}
