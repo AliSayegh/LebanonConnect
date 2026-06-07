@@ -35,17 +35,49 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
+const CustomerProfile = require("../Models/CustomerProfile");
+const ProviderProfile = require("../Models/ProviderProfile");
+
 // get all reports
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const reports = await Report.find()
-      .populate("reporterId", "name email")
-      .populate("reportedUserId", "name email")
+    let reports = await Report.find()
+      .populate("reporterId", "email")
+      .populate("reportedUserId", "email")
       .populate("jobId")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const userIds = new Set();
+    reports.forEach(r => {
+      if (r.reporterId?._id) userIds.add(r.reporterId._id.toString());
+      if (r.reportedUserId?._id) userIds.add(r.reportedUserId._id.toString());
+    });
+
+    const userIdsArray = Array.from(userIds);
+
+    const [customers, providers] = await Promise.all([
+      CustomerProfile.find({ userId: { $in: userIdsArray } }).select("userId fullName").lean(),
+      ProviderProfile.find({ userId: { $in: userIdsArray } }).select("userId displayName").lean()
+    ]);
+
+    const nameMap = {};
+    customers.forEach(c => { nameMap[c.userId.toString()] = c.fullName; });
+    providers.forEach(p => { nameMap[p.userId.toString()] = p.displayName; });
+
+    reports = reports.map(r => {
+      if (r.reporterId) {
+        r.reporterId.name = nameMap[r.reporterId._id.toString()] || null;
+      }
+      if (r.reportedUserId) {
+        r.reportedUserId.name = nameMap[r.reportedUserId._id.toString()] || null;
+      }
+      return r;
+    });
 
     res.json(reports);
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       message: "Failed to fetch reports",
     });
