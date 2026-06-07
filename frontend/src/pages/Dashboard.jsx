@@ -78,6 +78,7 @@ export default function Dashboard({ notify }) {
 
   // Admin-only: reports list
   const [reports, setReports] = useState([]);
+  const [activeReportsCount, setActiveReportsCount] = useState(0);
 
   // Report closure/view notes state
   const [closeReportModalOpen, setCloseReportModalOpen] = useState(false);
@@ -125,7 +126,8 @@ export default function Dashboard({ notify }) {
     if (user?.role !== "admin") return;
     try {
       const res = await client.get("/api/reports");
-      setReports(res.data || []);
+      setReports(res.data.items || res.data || []);
+      setActiveReportsCount(res.data.activeCount || 0);
     } catch (e) {
       console.error("Reports load error", e);
     }
@@ -353,7 +355,7 @@ export default function Dashboard({ notify }) {
           <button
             className={`dashTab ${dashTab === "reports" ? "active" : ""}`}
             onClick={() => setDashTab("reports")}
-          >Reports{reports.length > 0 ? ` (${reports.length})` : ""}</button>
+          >Reports{activeReportsCount > 0 ? ` (${activeReportsCount})` : ""}</button>
         </div>
       )}
 

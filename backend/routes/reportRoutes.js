@@ -77,13 +77,20 @@ router.get("/", requireAuth, async (req, res) => {
       return r;
     });
 
+    const order = { "open": 1, "reviewing": 2, "closed": 3 };
     reports.sort((a, b) => {
-      if (a.status === "closed" && b.status !== "closed") return 1;
-      if (a.status !== "closed" && b.status === "closed") return -1;
+      if (order[a.status] !== order[b.status]) {
+        return order[a.status] - order[b.status];
+      }
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
-    res.json(reports);
+    const activeCount = await Report.countDocuments({ status: { $ne: "closed" } });
+
+    res.json({
+      items: reports,
+      activeCount
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({
@@ -177,9 +184,11 @@ router.get("/provider/:id", requireAuth, requireRole("admin"), async (req, res) 
       return r;
     });
 
+    const order = { "open": 1, "reviewing": 2, "closed": 3 };
     reports.sort((a, b) => {
-      if (a.status === "closed" && b.status !== "closed") return 1;
-      if (a.status !== "closed" && b.status === "closed") return -1;
+      if (order[a.status] !== order[b.status]) {
+        return order[a.status] - order[b.status];
+      }
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
