@@ -9,7 +9,11 @@ const reportSchema = new mongoose.Schema(
     type: { type: String, enum: ["phone_share", "scam", "abuse", "spam"], required: true },
     details: { type: String, default: "", trim: true },
 
-    status: { type: String, enum: ["open", "reviewing", "closed"], default: "open", index: true }
+    status: { type: String, enum: ["open", "reviewing", "closed"], default: "open", index: true },
+
+    resolutionNote: { type: String, default: "", trim: true },
+    closedAt: { type: Date, default: null },
+    closedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserAuth", default: null }
   },
   { timestamps: true }
 );

@@ -73,8 +73,18 @@ export default function Dashboard({ notify }) {
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
 
+  const [deleteChatOpen, setDeleteChatOpen] = useState(false);
+  const [deleteChatJob, setDeleteChatJob] = useState(null);
+
   // Admin-only: reports list
   const [reports, setReports] = useState([]);
+  const [activeReportsCount, setActiveReportsCount] = useState(0);
+
+  // Report closure/view notes state
+  const [closeReportModalOpen, setCloseReportModalOpen] = useState(false);
+  const [viewNoteModalOpen, setViewNoteModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [resolutionNote, setResolutionNote] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -116,7 +126,8 @@ export default function Dashboard({ notify }) {
     if (user?.role !== "admin") return;
     try {
       const res = await client.get("/api/reports");
-      setReports(res.data || []);
+      setReports(res.data.items || res.data || []);
+      setActiveReportsCount(res.data.activeCount || 0);
     } catch (e) {
       console.error("Reports load error", e);
     }
@@ -128,13 +139,59 @@ export default function Dashboard({ notify }) {
     loadReports();
   }, [load, loadProviderData, loadReports]);
 
-  const updateReportStatus = async (reportId, newStatus) => {
+  const updateReportStatus = async (id, status) => {
     try {
-      await client.patch(`/api/reports/${reportId}/status`, { status: newStatus });
-      notify?.("success", "Updated", `Report marked as ${newStatus}`);
-      setReports((prev) => prev.map((r) => r._id === reportId ? { ...r, status: newStatus } : r));
+      await client.patch(`/api/reports/${id}/status`, { status });
+      notify?.("success", "Status updated", `Report is now ${status}`);
+      loadReports();
     } catch (e) {
       notify?.("error", "Error", e?.response?.data?.message || "Failed to update report");
+    }
+  };
+
+  const openCloseReportModal = (report) => {
+    setSelectedReport(report);
+    setResolutionNote("");
+    setCloseReportModalOpen(true);
+  };
+
+  const submitCloseReport = async () => {
+    if (!resolutionNote || resolutionNote.trim().length < 10) {
+      return notify?.("error", "Validation", "Resolution note must be at least 10 characters.");
+    }
+    try {
+      await client.patch(`/api/reports/${selectedReport._id}/status`, {
+        status: "closed",
+        resolutionNote: resolutionNote.trim()
+      });
+      notify?.("success", "Report Closed", "Report has been closed successfully.");
+      setCloseReportModalOpen(false);
+      setSelectedReport(null);
+      loadReports();
+    } catch (e) {
+      notify?.("error", "Error", e?.response?.data?.message || "Failed to close report.");
+    }
+  };
+
+  const openViewNoteModal = (report) => {
+    setSelectedReport(report);
+    setViewNoteModalOpen(true);
+  };
+
+  const openDeleteConfirm = (job) => {
+    setDeleteChatJob(job);
+    setDeleteChatOpen(true);
+  };
+
+  const deleteChat = async () => {
+    try {
+      await client.delete(`/api/admin/chat/${deleteChatJob._id}`);
+      notify?.("success", "Deleted", "Chat deleted successfully.");
+      setDeleteChatOpen(false);
+      setDeleteChatJob(null);
+      load();
+    } catch (e) {
+      notify?.("error", "Cannot delete", e?.response?.data?.message || "Error");
     }
   };
 
@@ -298,7 +355,7 @@ export default function Dashboard({ notify }) {
           <button
             className={`dashTab ${dashTab === "reports" ? "active" : ""}`}
             onClick={() => setDashTab("reports")}
-          >Reports{reports.length > 0 ? ` (${reports.length})` : ""}</button>
+          >Reports{activeReportsCount > 0 ? ` (${activeReportsCount})` : ""}</button>
         </div>
       )}
 
@@ -327,6 +384,19 @@ export default function Dashboard({ notify }) {
           {(jobs || []).map((job) => {
             const status = job.status || "open";
 
+            let displayTitle = job.title || "Job request";
+            let displayRole = "";
+            let displayCity = job.city || "";
+            let displayDate = new Date(job.createdAt).toLocaleString();
+
+            if (user?.role === "admin") {
+               const participant = job.providerId;
+               displayTitle = participant?.name || participant?.email || "Unknown Provider";
+               displayRole = "Provider";
+               displayCity = participant?.city || job.city || "—";
+               displayDate = `Last Update: ${new Date(job.updatedAt).toLocaleString()}`;
+            }
+
             return (
               <motion.div
                 key={job._id}
@@ -337,15 +407,14 @@ export default function Dashboard({ notify }) {
               >
                 <div className="jobTop">
                   <div className="jobTitleRow">
-                    <div className="jobTitle">{job.title || "Job request"}</div>
+                    <div className="jobTitle">{displayTitle}</div>
                     <StatusBadge status={status} />
                   </div>
                   <div className="jobMeta">
-                    <span className="pill">{job.city}</span>
-                    <span className="pill">{job.addressArea || "—"}</span>
-                    <span className="pill mono">
-                      {new Date(job.createdAt).toLocaleString()}
-                    </span>
+                    <span className="pill">{displayCity}</span>
+                    {displayRole && <span className="pill">{displayRole}</span>}
+                    {!displayRole && <span className="pill">{job.addressArea || "—"}</span>}
+                    <span className="pill mono">{displayDate}</span>
                     {user?.role === "customer" && job.providerId?.name && (
                       <span className="provider-name">
                         {job.providerId.name}
@@ -436,6 +505,15 @@ export default function Dashboard({ notify }) {
                       Leave Review
                     </button>
                   )}
+
+                  {user?.role === "admin" && (
+                    <button
+                      className="btn report"
+                      onClick={() => openDeleteConfirm(job)}
+                    >
+                      Delete Chat
+                    </button>
+                  )}
                 </div>
               </motion.div>
             );
@@ -506,15 +584,22 @@ export default function Dashboard({ notify }) {
                     <button
                       className="btn ghost"
                       style={{ padding: "4px 10px", fontSize: 12, minHeight: 28, height: "auto", background: "rgba(60,255,120,0.1)", color: "#80ffaa" }}
-                      onClick={() => updateReportStatus(r._id, "closed")}
+                      onClick={() => openCloseReportModal(r)}
                     >Close</button>
                   )}
                   {r.status === "closed" && (
-                    <button
-                      className="btn ghost"
-                      style={{ padding: "4px 10px", fontSize: 12, minHeight: 28, height: "auto" }}
-                      onClick={() => updateReportStatus(r._id, "open")}
-                    >Reopen</button>
+                    <>
+                      <button
+                        className="btn ghost"
+                        style={{ padding: "4px 10px", fontSize: 12, minHeight: 28, height: "auto", border: "1px solid rgba(255,255,255,0.1)" }}
+                        onClick={() => openViewNoteModal(r)}
+                      >View Note</button>
+                      <button
+                        className="btn ghost"
+                        style={{ padding: "4px 10px", fontSize: 12, minHeight: 28, height: "auto" }}
+                        onClick={() => updateReportStatus(r._id, "open")}
+                      >Reopen</button>
+                    </>
                   )}
                 </div>
               </div>
@@ -600,57 +685,115 @@ export default function Dashboard({ notify }) {
           </div>
         </div>
       </Modal>
+
+      {/* Delete Chat Modal */}
+      <Modal
+        open={deleteChatOpen}
+        title="Delete Chat"
+        onClose={() => setDeleteChatOpen(false)}
+      >
+        <div className="modalBody">
+          <p className="muted" style={{ marginBottom: 16 }}>
+            Are you sure you want to permanently delete this conversation? This will remove all messages and associations.
+          </p>
+          <div className="rowEnd">
+            <button className="btn ghost" onClick={() => setDeleteChatOpen(false)}>
+              Cancel
+            </button>
+            <button className="btn report" onClick={deleteChat}>
+              Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
       {/* Report Modal */}
       <Modal
         open={reportOpen}
-        title="Leave a report"
+        title="Report Job"
         onClose={() => setReportOpen(false)}
       >
         <div className="modalBody">
-          <p className="muted">
-            Please select the reason for reporting this user.
-          </p>
-
           <label className="field">
-            <div className="label">Report Type *</div>
-            <CustomSelect
+            <div className="label">Type of report</div>
+            <select
               value={reportType}
-              onChange={(v) => setReportType(v)}
-              options={[
-                { value: "phone_share", label: "Phone number sharing" },
-                { value: "scam", label: "Scam / Fraud" },
-                { value: "abuse", label: "Abusive behavior" },
-                { value: "spam", label: "Spam" },
-              ]}
-              placeholder="Select type"
-              ariaLabel="Report type"
-            />
+              onChange={(e) => setReportType(e.target.value)}
+              className="input"
+            >
+              <option value="scam">Scam / Fraud</option>
+              <option value="abuse">Abuse / Harassment</option>
+              <option value="spam">Spam</option>
+              <option value="phone_share">Inappropriate contact info share</option>
+            </select>
           </label>
-
           <label className="field">
-            <div className="label">Details (optional)</div>
+            <div className="label">Details</div>
             <textarea
               className="input"
               rows={4}
               value={reportDetails}
               onChange={(e) => setReportDetails(e.target.value)}
-              placeholder="Describe what happened..."
+              placeholder="Provide more context..."
             />
           </label>
-
           <div className="rowEnd">
-            <button
-              className="btn ghost"
-              onClick={() => setReportOpen(false)}
-            >
-              Cancel
-            </button>
-            <button
-              className="btn primary"
-              onClick={submitReport}
-            >
-              Submit Report
-            </button>
+            <button className="btn ghost" onClick={() => setReportOpen(false)}>Cancel</button>
+            <button className="btn report" onClick={submitReport}>Submit</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Close Report Modal */}
+      <Modal
+        open={closeReportModalOpen}
+        title="Close Report"
+        onClose={() => setCloseReportModalOpen(false)}
+      >
+        <div className="modalBody">
+          <label className="field">
+            <div className="label">Resolution Note</div>
+            <textarea
+              className="input"
+              rows={5}
+              value={resolutionNote}
+              onChange={(e) => setResolutionNote(e.target.value)}
+              placeholder="Describe the investigation result and action taken..."
+            />
+          </label>
+          <div className="rowEnd">
+            <button className="btn ghost" onClick={() => setCloseReportModalOpen(false)}>Cancel</button>
+            <button className="btn primary" onClick={submitCloseReport}>Close Report</button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* View Note Modal */}
+      <Modal
+        open={viewNoteModalOpen}
+        title="Report Resolution"
+        onClose={() => setViewNoteModalOpen(false)}
+      >
+        <div className="modalBody">
+          {selectedReport && (
+            <>
+              <div style={{ marginBottom: 12 }}>
+                <div className="muted tiny">Closed By</div>
+                <div style={{ fontWeight: 600 }}>{selectedReport.closedBy?.name || selectedReport.closedBy?.email || "Unknown"}</div>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <div className="muted tiny">Closed At</div>
+                <div style={{ fontWeight: 600 }}>{new Date(selectedReport.closedAt).toLocaleString()}</div>
+              </div>
+              <div style={{ marginBottom: 24 }}>
+                <div className="muted tiny" style={{ marginBottom: 4 }}>Resolution Note</div>
+                <div className="card" style={{ padding: 12, background: "rgba(0,0,0,0.2)", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: "300px", overflowY: "auto" }}>
+                  {selectedReport.resolutionNote || "No note provided."}
+                </div>
+              </div>
+            </>
+          )}
+          <div className="rowEnd">
+            <button className="btn ghost" onClick={() => setViewNoteModalOpen(false)}>Close</button>
           </div>
         </div>
       </Modal>

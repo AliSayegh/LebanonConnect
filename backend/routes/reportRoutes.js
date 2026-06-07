@@ -1,6 +1,7 @@
 // routes/reportRoutes.js
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Report = require("../Models/Report");
 const { requireAuth } = require("../Middleware/auth");
 
@@ -35,17 +36,63 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
+const CustomerProfile = require("../Models/CustomerProfile");
+const ProviderProfile = require("../Models/ProviderProfile");
+const AdminProfile = require("../Models/Adminprofile");
+
 // get all reports
 router.get("/", requireAuth, async (req, res) => {
   try {
-    const reports = await Report.find()
-      .populate("reporterId", "name email")
-      .populate("reportedUserId", "name email")
+    let reports = await Report.find()
+      .populate("reporterId", "email")
+      .populate("reportedUserId", "email")
       .populate("jobId")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json(reports);
+    const userIds = new Set();
+    reports.forEach(r => {
+      if (r.reporterId?._id) userIds.add(r.reporterId._id.toString());
+      if (r.reportedUserId?._id) userIds.add(r.reportedUserId._id.toString());
+    });
+
+    const userIdsArray = Array.from(userIds);
+
+    const [customers, providers] = await Promise.all([
+      CustomerProfile.find({ userId: { $in: userIdsArray } }).select("userId fullName").lean(),
+      ProviderProfile.find({ userId: { $in: userIdsArray } }).select("userId displayName").lean()
+    ]);
+
+    const nameMap = {};
+    customers.forEach(c => { nameMap[c.userId.toString()] = c.fullName; });
+    providers.forEach(p => { nameMap[p.userId.toString()] = p.displayName; });
+
+    reports = reports.map(r => {
+      if (r.reporterId) {
+        r.reporterId.name = nameMap[r.reporterId._id.toString()] || null;
+      }
+      if (r.reportedUserId) {
+        r.reportedUserId.name = nameMap[r.reportedUserId._id.toString()] || null;
+      }
+      return r;
+    });
+
+    const order = { "open": 1, "reviewing": 2, "closed": 3 };
+    reports.sort((a, b) => {
+      if (order[a.status] !== order[b.status]) {
+        return order[a.status] - order[b.status];
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    const activeCount = await Report.countDocuments({ status: { $ne: "closed" } });
+
+    res.json({
+      items: reports,
+      activeCount
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({
       message: "Failed to fetch reports",
     });
@@ -55,7 +102,7 @@ router.get("/", requireAuth, async (req, res) => {
 // update report
 router.patch("/:id/status", requireAuth, async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, resolutionNote } = req.body;
 
     if (!["open", "reviewing", "closed"].includes(status)) {
       return res.status(400).json({
@@ -63,9 +110,22 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
       });
     }
 
+    let updateData = { status };
+
+    if (status === "closed") {
+      if (!resolutionNote || resolutionNote.trim().length < 10) {
+        return res.status(400).json({
+          message: "Resolution note is required and must be at least 10 characters.",
+        });
+      }
+      updateData.resolutionNote = resolutionNote.trim();
+      updateData.closedAt = new Date();
+      updateData.closedBy = req.user.id;
+    }
+
     const report = await Report.findByIdAndUpdate(
       req.params.id,
-      { status },
+      updateData,
       { new: true }
     );
 
@@ -79,6 +139,64 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
   } catch (err) {
     res.status(500).json({
       message: "Failed to update report",
+    });
+  }
+});
+
+const { requireRole } = require("../Middleware/auth");
+
+// get reports for a specific provider (admin only)
+router.get("/provider/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    let reports = await Report.find({ reportedUserId: req.params.id })
+      .populate("reporterId", "email")
+      .populate("jobId")
+      .populate("closedBy", "email")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const userIds = new Set();
+    reports.forEach(r => {
+      if (r.reporterId?._id) userIds.add(r.reporterId._id.toString());
+      if (r.closedBy?._id) userIds.add(r.closedBy._id.toString());
+    });
+
+    const userIdsArray = Array.from(userIds);
+
+    const [customers, providers, admins] = await Promise.all([
+      CustomerProfile.find({ userId: { $in: userIdsArray } }).select("userId fullName").lean(),
+      ProviderProfile.find({ userId: { $in: userIdsArray } }).select("userId displayName").lean(),
+      AdminProfile.find({ userId: { $in: userIdsArray } }).select("userId").lean()
+    ]);
+
+    const nameMap = {};
+    customers.forEach(c => { nameMap[c.userId.toString()] = c.fullName; });
+    providers.forEach(p => { nameMap[p.userId.toString()] = p.displayName; });
+
+    reports = reports.map(r => {
+      if (r.reporterId) {
+        r.reporterId.name = nameMap[r.reporterId._id.toString()] || null;
+      }
+      if (r.closedBy) {
+        // Admins might not have names in profiles depending on schema, use email
+        r.closedBy.name = nameMap[r.closedBy._id.toString()] || r.closedBy.email;
+      }
+      return r;
+    });
+
+    const order = { "open": 1, "reviewing": 2, "closed": 3 };
+    reports.sort((a, b) => {
+      if (order[a.status] !== order[b.status]) {
+        return order[a.status] - order[b.status];
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    res.json(reports);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Failed to fetch provider reports",
     });
   }
 });

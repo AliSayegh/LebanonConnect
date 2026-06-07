@@ -2,6 +2,7 @@ const router = require("express").Router();
 const mongoose = require("mongoose");
 const Job = require("../Models/Job");
 const ProviderProfile = require("../Models/ProviderProfile");
+const CustomerProfile = require("../Models/CustomerProfile");
 const { requireAuth, requireRole } = require("../Middleware/auth");
 const checkProviderCanAccept = require("../Middleware/checkProviderCanAccept");
 // ✅ GET /api/jobs/mine (dashboard)
@@ -14,19 +15,57 @@ router.get("/mine", requireAuth, async (req, res) => {
     const skip = (pageNum - 1) * lim;
 
     const uid = req.user.id;
+    const role = req.user.role;
 
-    const q = { $or: [{ customerId: uid }, { providerId: uid }] };
+    const q = role === "admin" ? {} : { $or: [{ customerId: uid }, { providerId: uid }] };
     if (status) q.status = status;
 
-    const [items, total] = await Promise.all([
+    let [items, total] = await Promise.all([
       Job.find(q)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(lim)
-        .populate("providerId", "name email")
-        .populate("customerId", "name email"),
+        .populate("providerId", "email role")
+        .populate("customerId", "email role")
+        .lean(),
       Job.countDocuments(q)
     ]);
+
+    const userIds = new Set();
+    items.forEach(job => {
+      if (job.customerId?._id) userIds.add(job.customerId._id.toString());
+      if (job.providerId?._id) userIds.add(job.providerId._id.toString());
+    });
+
+    const userIdsArray = Array.from(userIds);
+
+    const [customers, providers] = await Promise.all([
+      CustomerProfile.find({ userId: { $in: userIdsArray } }).select("userId fullName city").lean(),
+      ProviderProfile.find({ userId: { $in: userIdsArray } }).select("userId displayName city").lean()
+    ]);
+
+    const nameMap = {};
+    const cityMap = {};
+    customers.forEach(c => { 
+      nameMap[c.userId.toString()] = c.fullName; 
+      cityMap[c.userId.toString()] = c.city; 
+    });
+    providers.forEach(p => { 
+      nameMap[p.userId.toString()] = p.displayName; 
+      cityMap[p.userId.toString()] = p.city; 
+    });
+
+    items = items.map(job => {
+      if (job.customerId) {
+        job.customerId.name = nameMap[job.customerId._id.toString()] || null;
+        job.customerId.city = cityMap[job.customerId._id.toString()] || null;
+      }
+      if (job.providerId) {
+        job.providerId.name = nameMap[job.providerId._id.toString()] || null;
+        job.providerId.city = cityMap[job.providerId._id.toString()] || null;
+      }
+      return job;
+    });
 
     return res.json({
       page: pageNum,
