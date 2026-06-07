@@ -101,7 +101,14 @@ export default function App() {
           />
           <Route path="/services/:serviceType" element={<ServicePage notify={notify} />} />
           <Route path="/search" element={<Search notify={notify} />} />
-          <Route path="/provider/setup" element={<ProviderSetup notify={notify} />} />
+          <Route
+            path="/provider/setup"
+            element={
+              <ProtectedRoute>
+                <ProviderSetup notify={notify} />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
         <Footer />
       </BrowserRouter>
