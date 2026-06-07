@@ -73,6 +73,9 @@ export default function Dashboard({ notify }) {
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
 
+  const [deleteChatOpen, setDeleteChatOpen] = useState(false);
+  const [deleteChatJob, setDeleteChatJob] = useState(null);
+
   // Admin-only: reports list
   const [reports, setReports] = useState([]);
 
@@ -135,6 +138,23 @@ export default function Dashboard({ notify }) {
       setReports((prev) => prev.map((r) => r._id === reportId ? { ...r, status: newStatus } : r));
     } catch (e) {
       notify?.("error", "Error", e?.response?.data?.message || "Failed to update report");
+    }
+  };
+
+  const openDeleteConfirm = (job) => {
+    setDeleteChatJob(job);
+    setDeleteChatOpen(true);
+  };
+
+  const deleteChat = async () => {
+    try {
+      await client.delete(`/api/admin/chat/${deleteChatJob._id}`);
+      notify?.("success", "Deleted", "Chat deleted successfully.");
+      setDeleteChatOpen(false);
+      setDeleteChatJob(null);
+      load();
+    } catch (e) {
+      notify?.("error", "Cannot delete", e?.response?.data?.message || "Error");
     }
   };
 
@@ -327,6 +347,19 @@ export default function Dashboard({ notify }) {
           {(jobs || []).map((job) => {
             const status = job.status || "open";
 
+            let displayTitle = job.title || "Job request";
+            let displayRole = "";
+            let displayCity = job.city || "";
+            let displayDate = new Date(job.createdAt).toLocaleString();
+
+            if (user?.role === "admin") {
+               const participant = job.providerId;
+               displayTitle = participant?.name || participant?.email || "Unknown Provider";
+               displayRole = "Provider";
+               displayCity = participant?.city || job.city || "—";
+               displayDate = `Last Update: ${new Date(job.updatedAt).toLocaleString()}`;
+            }
+
             return (
               <motion.div
                 key={job._id}
@@ -337,15 +370,14 @@ export default function Dashboard({ notify }) {
               >
                 <div className="jobTop">
                   <div className="jobTitleRow">
-                    <div className="jobTitle">{job.title || "Job request"}</div>
+                    <div className="jobTitle">{displayTitle}</div>
                     <StatusBadge status={status} />
                   </div>
                   <div className="jobMeta">
-                    <span className="pill">{job.city}</span>
-                    <span className="pill">{job.addressArea || "—"}</span>
-                    <span className="pill mono">
-                      {new Date(job.createdAt).toLocaleString()}
-                    </span>
+                    <span className="pill">{displayCity}</span>
+                    {displayRole && <span className="pill">{displayRole}</span>}
+                    {!displayRole && <span className="pill">{job.addressArea || "—"}</span>}
+                    <span className="pill mono">{displayDate}</span>
                     {user?.role === "customer" && job.providerId?.name && (
                       <span className="provider-name">
                         {job.providerId.name}
@@ -434,6 +466,15 @@ export default function Dashboard({ notify }) {
                       onClick={() => openReview(job)}
                     >
                       Leave Review
+                    </button>
+                  )}
+
+                  {user?.role === "admin" && (
+                    <button
+                      className="btn report"
+                      onClick={() => openDeleteConfirm(job)}
+                    >
+                      Delete Chat
                     </button>
                   )}
                 </div>
@@ -596,6 +637,27 @@ export default function Dashboard({ notify }) {
             </button>
             <button className="btn primary" onClick={submitReview}>
               Submit
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Chat Modal */}
+      <Modal
+        open={deleteChatOpen}
+        title="Delete Chat"
+        onClose={() => setDeleteChatOpen(false)}
+      >
+        <div className="modalBody">
+          <p className="muted" style={{ marginBottom: 16 }}>
+            Are you sure you want to permanently delete this conversation? This will remove all messages and associations.
+          </p>
+          <div className="rowEnd">
+            <button className="btn ghost" onClick={() => setDeleteChatOpen(false)}>
+              Cancel
+            </button>
+            <button className="btn report" onClick={deleteChat}>
+              Delete
             </button>
           </div>
         </div>
